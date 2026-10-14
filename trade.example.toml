@@ -1,4 +1,4 @@
-# Settings for Spreadwatch. Copy to trade.toml in the settings folder:
+# Settings for SpreadRadar. Copy to trade.toml in the settings folder:
 #   macOS / Linux: ~/.config/spreadwatch/trade.toml  (then: chmod 600 trade.toml)
 #   Windows:       %LOCALAPPDATA%\Spreadwatch\trade.toml
 # Keep it private: it can hold API keys. Every line is optional; the value

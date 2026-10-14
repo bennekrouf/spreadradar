@@ -80,7 +80,7 @@ fn main() {
         .with_custom_head(format!("<style>{MAIN_CSS}</style>"))
         .with_window(
             dioxus::desktop::WindowBuilder::new()
-                .with_title(concat!("Spreadwatch ", env!("CARGO_PKG_VERSION")))
+                .with_title(concat!("SpreadRadar ", env!("CARGO_PKG_VERSION")))
                 .with_inner_size(LogicalSize::new(1420.0, 940.0)),
         );
     LaunchBuilder::desktop()
@@ -103,7 +103,7 @@ fn App() -> Element {
     let mut scan = use_signal(ScanSnapshot::default);
     let mut tab = use_context_provider(|| Signal::new(Tab::Market));
 
-    // Spreadwatch Pro. The engine applies the watchlist limit; it is told
+    // SpreadRadar Pro. The engine applies the watchlist limit; it is told
     // again whenever the licence changes, so activating a key mid-session
     // follows every asset straight away.
     let pro = use_context_provider(|| Pro {
@@ -213,7 +213,7 @@ fn App() -> Element {
                 if let (Some(info), false) = (update_info.read().clone(), update_dismissed()) {
                     div { class: "banner",
                         span { class: "banner-text",
-                            "Spreadwatch "
+                            "SpreadRadar "
                             strong { "{info.latest_version}" }
                             " is available (you have {env!(\"CARGO_PKG_VERSION\")})."
                         }
@@ -257,7 +257,7 @@ fn App() -> Element {
                 if ask_consent() {
                     div { class: "banner notice",
                         span { class: "banner-text",
-                            strong { "Spreadwatch shares anonymous usage statistics. " }
+                            strong { "SpreadRadar shares anonymous usage statistics. " }
                             "Whether it is installed and opened, and its version and operating \
                              system — never your watchlist, trades, keys or anything you type."
                         }

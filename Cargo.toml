@@ -5,10 +5,10 @@ members = ["crates/spread-core"]
 resolver = "2"
 
 [package]
-name = "spreadwatch"
+name = "spreadradar"
 version = "0.1.8"
 edition = "2021"
-default-run = "spreadwatch"
+default-run = "spreadradar"
 description = "Cross-venue crypto spreads, lead/lag and new listings, with Jupiter swaps"
 license-file = "LICENSE"
 

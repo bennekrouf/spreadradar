@@ -1,4 +1,4 @@
-# Spreadwatch
+# SpreadRadar
 
 A desktop app that watches the same crypto asset across five exchanges and
 Solana on-chain at once: where the price differs, which venue moves first, and
@@ -7,7 +7,7 @@ from a hot wallet it creates for you.
 
 Built with [Dioxus](https://dioxuslabs.com/) (Rust) · macOS · Windows · Linux
 
-> **Not financial advice.** Spreadwatch shows market data and can place real
+> **Not financial advice.** SpreadRadar shows market data and can place real
 > trades. Prices can be stale, venues can be down, and a spread on screen is
 > not a profit in your account. Use it at your own risk, and fund the hot
 > wallet only with what you can afford to lose.
@@ -17,21 +17,21 @@ Built with [Dioxus](https://dioxuslabs.com/) (Rust) · macOS · Windows · Linux
 ## Install
 
 Builds are **free for individuals** and download from
-[mayorana.ch](https://mayorana.ch/en/apps/spreadwatch). Each release on GitHub
+[mayorana.ch](https://mayorana.ch/en/apps/spreadradar). Each release on GitHub
 carries a `latest.json` with the `sha256` of every artifact, so you can verify
 what you downloaded.
 
 ### macOS (Apple Silicon and Intel)
 
 Download
-[`spreadwatch-macos.dmg`](https://mayorana.ch/downloads/spreadwatch/latest/spreadwatch-macos.dmg),
-open it, and drag **Spreadwatch** to Applications. Signed with Apple Developer
+[`spreadradar-macos.dmg`](https://mayorana.ch/downloads/spreadradar/latest/spreadradar-macos.dmg),
+open it, and drag **SpreadRadar** to Applications. Signed with Apple Developer
 ID and notarized — opens with a normal double-click.
 
 ### Windows
 
 Download
-[`spreadwatch-setup.exe`](https://mayorana.ch/downloads/spreadwatch/latest/spreadwatch-setup.exe)
+[`spreadradar-setup.exe`](https://mayorana.ch/downloads/spreadradar/latest/spreadradar-setup.exe)
 and run it. It installs for your user only, with no admin prompt. Signed with
 Azure Trusted Signing. Needs the Microsoft Edge WebView2 Runtime, which
 Windows 11 and up-to-date Windows 10 already have; the installer tells you if
@@ -40,13 +40,13 @@ it is missing.
 ### Linux (x86_64)
 
 ```bash
-curl -L https://mayorana.ch/downloads/spreadwatch/latest/spreadwatch-linux-x86_64.tar.gz | tar xz
-cd spreadwatch-linux-x86_64
-sudo ./setup-linux.sh && ./spreadwatch
+curl -L https://mayorana.ch/downloads/spreadradar/latest/spreadradar-linux-x86_64.tar.gz | tar xz
+cd spreadradar-linux-x86_64
+sudo ./setup-linux.sh && ./spreadradar
 ```
 
 `setup-linux.sh` installs WebKitGTK, libxdo and OpenSSL 3 (Debian/Ubuntu,
-Fedora, Arch) and adds Spreadwatch to your app launcher. Runs on Ubuntu 22.04+,
+Fedora, Arch) and adds SpreadRadar to your app launcher. Runs on Ubuntu 22.04+,
 Debian 12+ and current Fedora and Arch.
 
 ---
@@ -54,7 +54,7 @@ Debian 12+ and current Fedora and Arch.
 ## What's new
 
 Every version and what changed in it:
-[Release notes](https://mayorana.ch/en/apps/spreadwatch/releases). The notes are
+[Release notes](https://mayorana.ch/en/apps/spreadradar/releases). The notes are
 written in [`CHANGELOG.md`](CHANGELOG.md) and published from there.
 
 ---
@@ -64,11 +64,11 @@ written in [`CHANGELOG.md`](CHANGELOG.md) and published from there.
 ### Watchlist
 
 Follow any asset by its ticker (BTC, ETH, JUP, BONK…). The free version follows
-3 at once; [Spreadwatch Pro](https://mayorana.ch/en/apps/spreadwatch) follows
+3 at once; [SpreadRadar Pro](https://mayorana.ch/en/apps/spreadradar) follows
 any number. Assets saved past the limit stay in the list, marked 🔒 Pro, and
 are followed again as soon as there is room or a licence. Each one is quoted
 against USDT on **Binance, Bybit, OKX, MEXC and Gate**, plus **Jupiter** for
-Solana tokens. If Gate does not trade a followed asset yet, Spreadwatch polls
+Solana tokens. If Gate does not trade a followed asset yet, SpreadRadar polls
 Gate's public API and tells you when the coin, then its USDT pair, appears.
 
 ### Market tab
@@ -117,8 +117,8 @@ It holds the hot wallet (`hot-wallet.json`), the optional settings file
 Solana RPC provider, a Jupiter API key or lower limits.
 
 **Back up `hot-wallet.json`.** It is the only copy of the wallet's key:
-uninstalling Spreadwatch leaves the folder alone for that reason, and anyone who
-gets the file can spend from the wallet. Spreadwatch refuses to load a keyfile
+uninstalling SpreadRadar leaves the folder alone for that reason, and anyone who
+gets the file can spend from the wallet. SpreadRadar refuses to load a keyfile
 other users on the machine can read.
 
 Set `DISABLE_UPDATE_CHECK=1` to stop the startup check for a newer version.
@@ -130,8 +130,8 @@ Set `DISABLE_UPDATE_CHECK=1` to stop the startup check for a newer version.
 ### Build from source
 
 ```bash
-git clone https://github.com/bennekrouf/spreadwatch.git
-cd spreadwatch
+git clone https://github.com/bennekrouf/spreadradar.git
+cd spreadradar
 git config core.hooksPath .githooks   # secret scan + rustfmt before each commit
 cargo run --release
 ```
@@ -157,7 +157,7 @@ scripts/
   release.sh            Cut a release (bump version, stamp notes, tag, push)
   changelog_to_json.py  CHANGELOG.md → releases.json + GitHub Release body
   setup-linux.sh        Linux runtime installer shipped in the tarball
-installer/installer.iss Inno Setup script → spreadwatch-setup.exe
+installer/installer.iss Inno Setup script → spreadradar-setup.exe
 .github/workflows/
   ci.yml                fmt, test and clippy on macOS, Windows and Linux
   release-notes.yml     Every app change adds a CHANGELOG.md note
@@ -188,8 +188,8 @@ Source-available under the [PolyForm Noncommercial License 1.0.0](LICENSE).
   charities, schools, universities and government institutions.
 - **Commercial use requires a licence** — including a solo consultant using it
   on client work, and an employee using it at their job. That licence is
-  [Spreadwatch Pro](https://mayorana.ch/en/apps/spreadwatch), bought on
-  Spreadwatch's page; it also lifts the free version's limit of 3 followed
+  [SpreadRadar Pro](https://mayorana.ch/en/apps/spreadradar), bought on
+  SpreadRadar's page; it also lifts the free version's limit of 3 followed
   assets.
 
 The name, logo and icons are trademarks and are not covered by that licence —

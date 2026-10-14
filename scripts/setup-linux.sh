@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# setup-linux.sh — one-time setup for Spreadwatch on Linux (Debian/Ubuntu/Fedora/Arch)
+# setup-linux.sh — one-time setup for SpreadRadar on Linux (Debian/Ubuntu/Fedora/Arch)
 #
 # Installs the runtime libraries the app links (WebKitGTK, libxdo, OpenSSL 3)
 # and adds a launcher with the app icon. Already-installed packages are skipped.
@@ -76,31 +76,31 @@ esac
 # ── Icon + launcher ───────────────────────────────────────────────────────────
 BINARY_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ICON_DIR="/usr/share/icons/hicolor/256x256/apps"
-DESKTOP_FILE="/usr/share/applications/spreadwatch.desktop"
+DESKTOP_FILE="/usr/share/applications/spreadradar.desktop"
 
 ICON_NAME="utilities-system-monitor"
 if [[ -f "$BINARY_DIR/icon.png" ]]; then
-  install -Dm644 "$BINARY_DIR/icon.png" "$ICON_DIR/spreadwatch.png"
+  install -Dm644 "$BINARY_DIR/icon.png" "$ICON_DIR/spreadradar.png"
   command -v gtk-update-icon-cache &>/dev/null && gtk-update-icon-cache -q -t /usr/share/icons/hicolor || true
-  ICON_NAME="spreadwatch"
+  ICON_NAME="spreadradar"
   ok "Icon installed"
 fi
 
 # Rewritten on every run, so the launcher follows the archive if it moves.
 cat > "$DESKTOP_FILE" <<EOF
 [Desktop Entry]
-Name=Spreadwatch
+Name=SpreadRadar
 Comment=Cross-venue crypto spreads, lead/lag and new listings
-Exec=$BINARY_DIR/spreadwatch
+Exec=$BINARY_DIR/spreadradar
 Icon=$ICON_NAME
 Terminal=false
 Type=Application
 Categories=Finance;Office;
-StartupWMClass=spreadwatch
+StartupWMClass=spreadradar
 EOF
 command -v update-desktop-database &>/dev/null && update-desktop-database -q /usr/share/applications || true
 ok "Launcher created ($DESKTOP_FILE)"
 
 echo ""
-echo "Setup complete. Start Spreadwatch from your app launcher, or run ./spreadwatch"
+echo "Setup complete. Start SpreadRadar from your app launcher, or run ./spreadradar"
 echo "Settings, including the hot wallet, go to ~/.config/spreadwatch (see trade.example.toml)."

@@ -11,7 +11,7 @@ use std::collections::HashMap;
 /// fetched from the GitHub release, which meant update checks broke for every
 /// installed copy the moment that repo stopped being publicly readable — the
 /// app should not depend on the source host to tell users a build exists.
-const LATEST_URL: &str = "https://mayorana.ch/downloads/spreadwatch/latest/latest.json";
+const LATEST_URL: &str = "https://mayorana.ch/downloads/spreadradar/latest/latest.json";
 
 /// Fallback when `latest.json` has no entry for this OS (e.g. an Intel Mac —
 /// only Apple Silicon is built). Sends the user to pick a build by hand
@@ -23,7 +23,7 @@ const RELEASES_URL: &str = "https://mayorana.ch/en/apps";
 /// carries the version, which is what makes per-version adoption
 /// visible — the number that says how many people are still on a build
 /// with a bug that is already fixed.
-const USER_AGENT: &str = concat!("spreadwatch/", env!("CARGO_PKG_VERSION"), " (updater)");
+const USER_AGENT: &str = concat!("spreadradar/", env!("CARGO_PKG_VERSION"), " (updater)");
 
 #[derive(Debug, Deserialize)]
 struct LatestJson {

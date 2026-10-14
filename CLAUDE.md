@@ -1,10 +1,10 @@
-# Spreadwatch
+# SpreadRadar
 
 ## Release notes
 
-Every change a user of Spreadwatch could notice gets a note in `CHANGELOG.md`,
+Every change a user of SpreadRadar could notice gets a note in `CHANGELOG.md`,
 in the same PR as the change. The notes are published as-is at
-<https://mayorana.ch/en/apps/spreadwatch/releases> and in the GitHub Release
+<https://mayorana.ch/en/apps/spreadradar/releases> and in the GitHub Release
 body.
 
 - Add bullets under `## [Unreleased]`, grouped under `### Added`, `### Changed`,

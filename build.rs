@@ -13,18 +13,18 @@ fn main() {
     println!("cargo:rerun-if-changed=assets/icon.ico");
     println!("cargo:rerun-if-changed=build.rs");
 
-    // What a Pro licence's `updates_until` is compared with: SPREADWATCH_RELEASE_DATE
+    // What a Pro licence's `updates_until` is compared with: SPREADRADAR_RELEASE_DATE
     // if set, else the date of the commit being built (the release commit, in
     // CI), else empty (unknown: every licence covers it). The public key is read
     // by the app with `option_env!`; listed here so changing it rebuilds.
-    println!("cargo:rerun-if-env-changed=SPREADWATCH_RELEASE_DATE");
-    println!("cargo:rerun-if-env-changed=SPREADWATCH_LICENSE_PUBLIC_KEY");
-    let date = std::env::var("SPREADWATCH_RELEASE_DATE")
+    println!("cargo:rerun-if-env-changed=SPREADRADAR_RELEASE_DATE");
+    println!("cargo:rerun-if-env-changed=SPREADRADAR_LICENSE_PUBLIC_KEY");
+    let date = std::env::var("SPREADRADAR_RELEASE_DATE")
         .ok()
         .filter(|d| !d.is_empty())
         .or_else(commit_date);
     println!(
-        "cargo:rustc-env=SPREADWATCH_RELEASE_DATE={}",
+        "cargo:rustc-env=SPREADRADAR_RELEASE_DATE={}",
         date.unwrap_or_default()
     );
 
@@ -41,8 +41,8 @@ fn main() {
 
         let mut res = winresource::WindowsResource::new();
         res.set_icon("assets/icon.ico");
-        res.set("FileDescription", "Spreadwatch");
-        res.set("ProductName", "Spreadwatch");
+        res.set("FileDescription", "SpreadRadar");
+        res.set("ProductName", "SpreadRadar");
         res.set("CompanyName", "Mayorana");
         res.set("LegalCopyright", "© 2026 Mayorana");
         if let Err(e) = res.compile() {

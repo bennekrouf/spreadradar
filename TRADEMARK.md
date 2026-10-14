@@ -1,12 +1,12 @@
 # Trademark and Brand Policy
 
-The source code of Spreadwatch is licensed under the PolyForm Noncommercial
+The source code of SpreadRadar is licensed under the PolyForm Noncommercial
 License 1.0.0 (see [LICENSE](LICENSE)). **This policy covers what that licence
 deliberately does not grant: the name and the brand.**
 
 ## What this covers
 
-- The names **"Spreadwatch"**, **"spreadwatch"**, **"Bennekrouf"**, and
+- The names **"SpreadRadar"**, **"spreadradar"**, **"Bennekrouf"**, and
   **"Mayorana"**.
 - The project logo and application icons, including `assets/icon.svg`,
   `assets/icon.png`, and any icon derived or generated from them (such as the
@@ -24,12 +24,12 @@ should be read as granting one.
   fine and needs no permission.
 - Keep the branding intact in an unmodified copy of the software that you use
   under the terms of LICENSE.
-- Say that your work is "compatible with Spreadwatch" or "built for Spreadwatch",
+- Say that your work is "compatible with SpreadRadar" or "built for SpreadRadar",
   provided you do not imply that it is produced, endorsed, or supported by us.
 
 ## What you may not do
 
-- Ship a modified build under the name "Spreadwatch", or under any name
+- Ship a modified build under the name "SpreadRadar", or under any name
   confusingly similar to it. **Fork it, rebrand it** — change the product name
   and replace the icon assets.
 - Use the logo or icons as the identity of your own product, service, or

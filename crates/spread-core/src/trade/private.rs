@@ -185,7 +185,7 @@ mod tests {
 
     #[test]
     fn restricted_file_is_private() {
-        let dir = std::env::temp_dir().join(format!("spreadwatch-private-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("spreadradar-private-{}", std::process::id()));
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("secret.json");
         fs::write(&path, "[]").unwrap();
@@ -198,7 +198,7 @@ mod tests {
     #[test]
     fn world_readable_file_is_reported() {
         use std::os::unix::fs::PermissionsExt;
-        let dir = std::env::temp_dir().join(format!("spreadwatch-shared-{}", std::process::id()));
+        let dir = std::env::temp_dir().join(format!("spreadradar-shared-{}", std::process::id()));
         fs::create_dir_all(&dir).unwrap();
         let path = dir.join("secret.json");
         fs::write(&path, "[]").unwrap();

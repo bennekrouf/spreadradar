@@ -13,7 +13,7 @@
 #   ./scripts/setup-github.sh
 #
 # Optional:
-#   REPO=owner/name            default: bennekrouf/spreadwatch
+#   REPO=owner/name            default: bennekrouf/spreadradar
 #   DIST_KEY_FILE=path         default: ~/.ssh/ais-dist (the rrsync deploy key)
 #   ONLY="NAME1 NAME2"         set only these secrets (e.g. after rotating one)
 #
@@ -21,7 +21,7 @@
 
 set -euo pipefail
 
-REPO="${REPO:-bennekrouf/spreadwatch}"
+REPO="${REPO:-bennekrouf/spreadradar}"
 DIST_KEY_FILE="${DIST_KEY_FILE:-$HOME/.ssh/ais-dist}"
 ONLY="${ONLY:-}"
 

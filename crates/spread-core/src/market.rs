@@ -5,7 +5,7 @@
 //! the full snapshot of the selected one.
 //!
 //! The app can cap how many assets are followed ([`MarketCmd::SetLimit`]): the
-//! free version of Spreadwatch follows three. Nothing is ever dropped from the
+//! free version of SpreadRadar follows three. Nothing is ever dropped from the
 //! saved watchlist for it: assets past the limit stay listed, locked and not
 //! polled, and come back the moment the limit is lifted. Without the command
 //! (the CLI, tests) there is no limit.
