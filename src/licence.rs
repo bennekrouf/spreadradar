@@ -1,4 +1,4 @@
-//! Spreadwatch Pro: the licence on this computer.
+//! SpreadRadar Pro: the licence on this computer.
 //!
 //! mayorana.ch signs each licence when it is bought, with a private Ed25519
 //! key; the app holds the public half and checks the signature, so there is no
@@ -13,7 +13,7 @@
 //! release dated up to `updates_until`, and keeps unlocking those releases
 //! after that day.
 //!
-//! Without Pro, Spreadwatch follows [`FREE_ASSETS`] assets at once. The engine
+//! Without Pro, SpreadRadar follows [`FREE_ASSETS`] assets at once. The engine
 //! applies the limit ([`spread_core::MarketCmd::SetLimit`]); this module only
 //! says which status the app is in.
 
@@ -24,22 +24,23 @@ use base64::Engine;
 use ed25519_dalek::{Signature, VerifyingKey};
 use serde::Deserialize;
 
-/// The product name in every Spreadwatch licence.
+/// The product id in every SpreadRadar licence. The app was called Spreadwatch
+/// when the first keys were sold, and a key names its product, so the id stays.
 pub const PRODUCT: &str = "spreadwatch";
 
-/// Where "Buy Spreadwatch Pro" leads.
-pub const BUY_URL: &str = "https://mayorana.ch/en/apps/spreadwatch";
+/// Where "Buy SpreadRadar Pro" leads.
+pub const BUY_URL: &str = "https://mayorana.ch/en/apps/spreadradar";
 
 /// How many assets the free version follows at once.
 pub const FREE_ASSETS: usize = 3;
 
 /// The public half of mayorana.ch's licence signing key (32 bytes, standard
-/// base64), built in by the release workflow from `SPREADWATCH_LICENSE_PUBLIC_KEY`.
-const PUBLIC_KEY: Option<&str> = option_env!("SPREADWATCH_LICENSE_PUBLIC_KEY");
+/// base64), built in by the release workflow from `SPREADRADAR_LICENSE_PUBLIC_KEY`.
+const PUBLIC_KEY: Option<&str> = option_env!("SPREADRADAR_LICENSE_PUBLIC_KEY");
 
 /// This build's release date (`YYYY-MM-DD`), set by build.rs. Empty when
 /// unknown, which every licence covers.
-const RELEASE_DATE: &str = env!("SPREADWATCH_RELEASE_DATE");
+const RELEASE_DATE: &str = env!("SPREADRADAR_RELEASE_DATE");
 
 const LICENCE_FILE: &str = "licence";
 
@@ -75,12 +76,12 @@ impl std::fmt::Display for LicenseError {
                 "This isn't a complete licence key. Copy the whole key from the email."
             ),
             Self::BadSignature => write!(f, "This licence key isn't valid."),
-            Self::OtherProduct(p) => write!(f, "This is a licence for {p}, not Spreadwatch."),
+            Self::OtherProduct(p) => write!(f, "This is a licence for {p}, not SpreadRadar."),
         }
     }
 }
 
-/// The licence in `key`, if `public_key` signed it and it is for Spreadwatch.
+/// The licence in `key`, if `public_key` signed it and it is for SpreadRadar.
 /// Whitespace is ignored: keys pasted from an email are often wrapped.
 pub fn verify(key: &str, public_key: &[u8; 32]) -> Result<License, LicenseError> {
     let key: String = key.chars().filter(|c| !c.is_whitespace()).collect();
@@ -161,10 +162,10 @@ pub fn current() -> Status {
     }
 }
 
-/// Checks `key` and, if it is a Spreadwatch licence, saves it.
+/// Checks `key` and, if it is a SpreadRadar licence, saves it.
 pub fn activate(key: &str) -> Result<Status, String> {
     let public = public_key()
-        .ok_or("This build of Spreadwatch can't check licences. Download it from mayorana.ch.")?;
+        .ok_or("This build of SpreadRadar can't check licences. Download it from mayorana.ch.")?;
     let license = verify(key, &public).map_err(|e| e.to_string())?;
     let key: String = key.chars().filter(|c| !c.is_whitespace()).collect();
     let path = licence_path();
@@ -201,7 +202,7 @@ mod tests {
     const PAYLOAD: &str = r#"{"v":1,"id":"lic_1","product":"spreadwatch","edition":"pro","email":"dev@example.ch","issued":"2026-10-08","updates_until":"2027-10-08"}"#;
 
     #[test]
-    fn a_signed_spreadwatch_key_is_accepted_even_when_wrapped() {
+    fn a_signed_spreadradar_key_is_accepted_even_when_wrapped() {
         let signer = SigningKey::from_bytes(&[7u8; 32]);
         let key = sign(PAYLOAD, &signer);
         let (a, b) = key.split_at(30);

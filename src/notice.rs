@@ -10,12 +10,12 @@
 //! no banner. Never panics, never slows startup.
 //!
 //! Served from mayorana.ch:
-//!   /downloads/spreadwatch/notice.json   — this product only (wins when present)
+//!   /downloads/spreadradar/notice.json   — this product only (wins when present)
 //!   /downloads/notice.json           — every product
 //!
 //! ```json
 //! { "id": "founding-2026-09",
-//!   "apps": null,                       // or ["spreadwatch", ...] to target
+//!   "apps": null,                       // or ["spreadradar", ...] to target
 //!   "text": "You're one of the first people running {app}. ...",
 //!   "link_text": "Tell us how it's going",
 //!   "url": "https://mayorana.ch/en/contact" }
@@ -26,15 +26,15 @@
 use serde::Deserialize;
 use std::path::PathBuf;
 
-const APP: &str = "spreadwatch";
-const APP_NAME: &str = "Spreadwatch";
+const APP: &str = "spreadradar";
+const APP_NAME: &str = "SpreadRadar";
 
-const APP_NOTICE_URL: &str = "https://mayorana.ch/downloads/spreadwatch/notice.json";
+const APP_NOTICE_URL: &str = "https://mayorana.ch/downloads/spreadradar/notice.json";
 const GLOBAL_NOTICE_URL: &str = "https://mayorana.ch/downloads/notice.json";
 
 /// Distinct from the updater's agent on purpose: the download statistics
 /// count `(updater)` polls as live installs, and this fetch is not one.
-const USER_AGENT: &str = concat!("spreadwatch/", env!("CARGO_PKG_VERSION"), " (notice)");
+const USER_AGENT: &str = concat!("spreadradar/", env!("CARGO_PKG_VERSION"), " (notice)");
 
 #[derive(Debug, Clone, Deserialize)]
 pub struct Notice {

@@ -1,15 +1,15 @@
-; Spreadwatch — Windows installer
+; SpreadRadar — Windows installer
 ; Build: iscc /DMyAppVersion=X.Y.Z installer\installer.iss
-; Output: dist\spreadwatch-setup.exe
+; Output: dist\spreadradar-setup.exe
 
 #ifndef MyAppVersion
   #define MyAppVersion "0.1.0"
 #endif
 
-#define MyAppName      "Spreadwatch"
+#define MyAppName      "SpreadRadar"
 #define MyAppPublisher "Mayorana"
-#define MyAppURL       "https://mayorana.ch/en/apps/spreadwatch"
-#define MyAppExeName   "spreadwatch.exe"
+#define MyAppURL       "https://mayorana.ch/en/apps/spreadradar"
+#define MyAppExeName   "spreadradar.exe"
 ; Never reuse another app's AppId: installers sharing one uninstall each other.
 #define MyAppId        "{218EC912-8688-457E-9FA7-8A1F39F57D49}"
 
@@ -25,12 +25,12 @@ DefaultDirName={autopf}\{#MyAppName}
 DefaultGroupName={#MyAppName}
 AllowNoIcons=yes
 OutputDir=..\dist
-OutputBaseFilename=spreadwatch-setup
+OutputBaseFilename=spreadradar-setup
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
 ; Per-user by default: no UAC prompt, and nothing here needs admin rights.
-; IT can still install machine-wide with: spreadwatch-setup.exe /ALLUSERS
+; IT can still install machine-wide with: spreadradar-setup.exe /ALLUSERS
 PrivilegesRequired=lowest
 PrivilegesRequiredOverridesAllowed=commandline
 ArchitecturesAllowed=x64compatible

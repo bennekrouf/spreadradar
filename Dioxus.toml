@@ -1,9 +1,9 @@
 [application]
-name = "spreadwatch"
+name = "spreadradar"
 default_platform = "desktop"
 
 [desktop]
-title = "Spreadwatch"
+title = "SpreadRadar"
 
 [bundle]
 identifier = "ch.mayorana.spreadwatch"

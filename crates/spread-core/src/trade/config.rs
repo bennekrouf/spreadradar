@@ -28,6 +28,10 @@ fn legacy_config_dir() -> PathBuf {
 /// keeps its own files. `%LOCALAPPDATA%\Spreadwatch` on Windows: the profile
 /// folder only its user can read, and unlike Roaming it is never copied to a
 /// domain's profile server, which a hot wallet must not be.
+///
+/// Still named after Spreadwatch, the app's name before SpreadRadar: it holds
+/// the hot wallet, and `keypair_path` in people's `trade.toml` points into it.
+/// Moving a wallet to follow a rename is not worth the risk.
 fn default_config_dir() -> PathBuf {
     if cfg!(windows) {
         dirs::data_local_dir()

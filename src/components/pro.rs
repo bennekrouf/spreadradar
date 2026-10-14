@@ -1,4 +1,4 @@
-//! The Spreadwatch Pro window: what the free version does, the licence on this
+//! The SpreadRadar Pro window: what the free version does, the licence on this
 //! computer, and where to paste a key.
 
 use dioxus::prelude::*;
@@ -24,7 +24,7 @@ pub fn ProButton() -> Element {
         Status::Pro(l) => (
             "✦ PRO",
             "pro-btn active",
-            format!("Spreadwatch Pro, licensed to {}", l.email),
+            format!("SpreadRadar Pro, licensed to {}", l.email),
         ),
         Status::Renew(_) => (
             "✦ RENEW PRO",
@@ -73,7 +73,7 @@ pub fn ProWindow() -> Element {
                 class: "modal card",
                 // Clicks inside the window don't close it.
                 onclick: move |e| e.stop_propagation(),
-                h2 { "Spreadwatch Pro" }
+                h2 { "SpreadRadar Pro" }
                 match &status {
                     Status::Free => rsx! {
                         p {
@@ -96,7 +96,7 @@ pub fn ProWindow() -> Element {
                         }
                     },
                     Status::Unavailable => rsx! {
-                        p { "This build of Spreadwatch can't check licences, so nothing is limited. Builds from mayorana.ch can." }
+                        p { "This build of SpreadRadar can't check licences, so nothing is limited. Builds from mayorana.ch can." }
                     },
                 }
                 if matches!(status, Status::Free | Status::Renew(_)) {
@@ -105,7 +105,7 @@ pub fn ProWindow() -> Element {
                         onclick: move |_| {
                             let _ = open::that(licence::BUY_URL);
                         },
-                        if matches!(status, Status::Renew(_)) { "Renew Spreadwatch Pro" } else { "Buy Spreadwatch Pro" }
+                        if matches!(status, Status::Renew(_)) { "Renew SpreadRadar Pro" } else { "Buy SpreadRadar Pro" }
                     }
                     p { class: "muted small", "Already bought it? Paste the licence key from your email:" }
                     textarea {

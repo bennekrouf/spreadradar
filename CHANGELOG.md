@@ -1,10 +1,10 @@
 # Changelog
 
-What changed in each release of **Spreadwatch**, the desktop app that watches
+What changed in each release of **SpreadRadar**, the desktop app that watches
 crypto spreads across exchanges and Solana on-chain.
 
 The public version of this page — with the download for each release — lives at
-<https://mayorana.ch/en/apps/spreadwatch/releases>. It is generated from this
+<https://mayorana.ch/en/apps/spreadradar/releases>. It is generated from this
 file by `scripts/changelog_to_json.py`, so this file is the only place a
 release note is written.
 
@@ -13,13 +13,23 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Each heading is dated on the day its tag was pushed.
 
+## [Unreleased]
+
+### Changed
+
+- Spreadwatch is now called SpreadRadar. Your Pro licence, hot wallet,
+  watchlist and settings carry over: they stay in the same folder,
+  `~/.config/spreadwatch` (`%LOCALAPPDATA%\Spreadwatch` on Windows). On macOS
+  the update installs as SpreadRadar.app; once it runs, you can delete
+  Spreadwatch.app from Applications.
+
 ## [0.1.7] - 2026-10-08
 
 ### Added
 
-- Spreadwatch Pro. The free version follows 3 assets at once, with every tab,
+- SpreadRadar Pro. The free version follows 3 assets at once, with every tab,
   every venue and trading; Pro follows any number, and is the licence for
-  commercial use. Buy it on [Spreadwatch's page](https://mayorana.ch/en/apps/spreadwatch),
+  commercial use. Buy it on [SpreadRadar's page](https://mayorana.ch/en/apps/spreadradar),
   then click **Get Pro…** at the right of the tab bar and paste the key. The
   key is checked on your computer: no account, nothing sent anywhere.
 - If your watchlist already holds more than 3 assets, none is removed: the
@@ -30,7 +40,7 @@ Each heading is dated on the day its tag was pushed.
 
 ### Changed
 
-- The publisher information for Spreadwatch has been updated to 'Mayorana'. This
+- The publisher information for SpreadRadar has been updated to 'Mayorana'. This
   change affects the metadata associated with the application, such as the
   installer and executable details.
 
@@ -38,7 +48,7 @@ Each heading is dated on the day its tag was pushed.
 
 ### Added
 
-- Spreadwatch now shares anonymous usage statistics: whether it is installed and
+- SpreadRadar now shares anonymous usage statistics: whether it is installed and
   opened, its version and your operating system. It is on by default; a note at
   the bottom of the window tells you once, and nothing is sent before you have
   seen it. **Turn off** there stops it for good and deletes anything not yet

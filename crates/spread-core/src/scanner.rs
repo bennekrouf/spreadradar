@@ -839,7 +839,7 @@ struct Scanner {
 pub async fn run(out: watch::Sender<ScanSnapshot>) {
     let http = reqwest::Client::builder()
         .timeout(Duration::from_secs(30))
-        .user_agent("spreadwatch")
+        .user_agent("spreadradar")
         .build()
         .expect("http client");
     let mut s = Scanner {
