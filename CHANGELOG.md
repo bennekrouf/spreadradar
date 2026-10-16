@@ -13,6 +13,22 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Each heading is dated on the day its tag was pushed.
 
+## [Unreleased]
+
+### Added
+
+- The New listings tab now shows each token's best edge between exchanges:
+  buy on one, sell on another, after the taker fee on both legs. **By edge**
+  puts the ones worth a look first, and the Detections log notes when an
+  edge of 30 bps or more opens or closes. Exchanges with under $10k of
+  volume are left out, since their best price is often a stale order.
+- An edge that needs Gate is marked when Gate has closed deposits or
+  withdrawals for the coin, so you don't chase a gap you can't move coins
+  across. The other exchanges don't publish this, so check them yourself.
+- Gaps over 20 % are marked "same token?": they almost always mean two
+  different tokens sharing a ticker. Prices come from the scan every 5
+  minutes; click **Watch** to follow a token's edge live on the Market tab.
+
 ## [0.1.10] - 2026-10-16
 
 ### Added

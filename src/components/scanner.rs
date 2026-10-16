@@ -2,8 +2,8 @@ use dioxus::prelude::*;
 use std::time::Duration;
 
 use spread_core::scanner::{
-    fmt_bps, fmt_pct, fmt_spread, fmt_usd, NewListing, ScanSnapshot, NEW_WITHIN_DAYS, SCAN_EVERY,
-    TIGHT_SPREAD_BPS, WIDE_SPREAD_BPS,
+    fmt_bps, fmt_edge, fmt_pct, fmt_spread, fmt_usd, NewListing, ScanSnapshot, EDGE_NET_BPS,
+    NEW_WITHIN_DAYS, SCAN_EVERY, SUSPECT_EDGE_BPS, TIGHT_SPREAD_BPS, WIDE_SPREAD_BPS,
 };
 use spread_core::MarketCmd;
 use tokio::sync::mpsc;
@@ -21,6 +21,7 @@ pub fn NewListingsPanel(scan: ScanSnapshot, watched: Vec<String>) -> Element {
     let tx = use_context::<mpsc::Sender<MarketCmd>>();
     let mut tab = use_context::<Signal<Tab>>();
     let mut min_score = use_signal(|| i32::MIN);
+    let mut by_edge = use_signal(|| false);
     // Follows the token's spread in the watchlist and shows it.
     let watch = use_callback(move |symbol: String| {
         if let Err(e) = tx.try_send(MarketCmd::Add(symbol)) {
@@ -29,11 +30,24 @@ pub fn NewListingsPanel(scan: ScanSnapshot, watched: Vec<String>) -> Element {
         tab.set(Tab::Market);
     });
 
-    let shown: Vec<&NewListing> = scan
+    let mut shown: Vec<&NewListing> = scan
         .rows
         .iter()
         .filter(|r| r.score >= min_score())
         .collect();
+    if by_edge() {
+        // Edges worth a look first, then the rest by net; none at the end.
+        let key = |r: &NewListing| {
+            r.edge
+                .as_ref()
+                .map(|e| (e.open(), e.net_bps))
+                .unwrap_or((false, f64::NEG_INFINITY))
+        };
+        shown.sort_by(|a, b| {
+            let (ka, kb) = (key(a), key(b));
+            kb.0.cmp(&ka.0).then(kb.1.total_cmp(&ka.1))
+        });
+    }
     let every = SCAN_EVERY.as_secs() / 60;
 
     rsx! {
@@ -53,6 +67,14 @@ pub fn NewListingsPanel(scan: ScanSnapshot, watched: Vec<String>) -> Element {
                     }
                 }
                 div { class: "filters",
+                    for (label, edge) in [("By score", false), ("By edge", true)] {
+                        button {
+                            class: if by_edge() == edge { "chip-btn active" } else { "chip-btn" },
+                            onclick: move |_| by_edge.set(edge),
+                            "{label}"
+                        }
+                    }
+                    span { class: "filter-gap" }
                     for (label, min) in MIN_SCORES {
                         button {
                             class: if min_score() == min { "chip-btn active" } else { "chip-btn" },
@@ -79,6 +101,10 @@ pub fn NewListingsPanel(scan: ScanSnapshot, watched: Vec<String>) -> Element {
                             th { class: "num", "24h" }
                             th { class: "num", "Mkt cap" }
                             th { class: "num", title: "Bid/ask spread on the most traded exchange", "Spread" }
+                            th { class: "num",
+                                title: "Best buy-here, sell-there gap between two exchanges, after the taker fee on both legs. From the last scan's best bid and ask, so up to {every} min old, with no order book depth. Exchanges under $10k of 24h volume are left out.",
+                                "Edge"
+                            }
                             th { title: "Why it may be serious (green) or not (red)", "Signals" }
                             th { class: "num", title: "Green signals minus red ones", "Score" }
                             th {}
@@ -123,6 +149,11 @@ fn ListingRow(row: NewListing, watched: bool, on_watch: Callback<String>) -> Ele
         Some(s) if s >= WIDE_SPREAD_BPS => "num down",
         _ => "num",
     };
+    let edge_class = match &r.edge {
+        Some(e) if e.open() => "num pos strong",
+        Some(e) if e.net_bps >= EDGE_NET_BPS => "num warn",
+        _ => "num muted",
+    };
     let change_class = match r.change_pct {
         Some(c) if c > 0.0 => "num pos",
         Some(c) if c < 0.0 => "num down",
@@ -158,6 +189,33 @@ fn ListingRow(row: NewListing, watched: bool, on_watch: Callback<String>) -> Ele
                     Some(s) => rsx! {
                         {fmt_bps(s)}
                         div { class: "muted small", {fmt_pct(s)} }
+                    },
+                    None => rsx! { "–" },
+                }
+            }
+            td { class: edge_class,
+                title: r.edge.as_ref().map(|e| format!(
+                    "Buy on {} at the ask, sell on {} at the bid: {} gross, {} net of {} + {} fees",
+                    e.buy.name(),
+                    e.sell.name(),
+                    fmt_edge(e.gross_bps),
+                    fmt_edge(e.net_bps),
+                    fmt_bps(e.buy.taker_fee_bps()),
+                    fmt_bps(e.sell.taker_fee_bps()),
+                )),
+                match &r.edge {
+                    Some(e) => rsx! {
+                        {fmt_edge(e.net_bps)}
+                        div { class: "muted small nowrap", {e.route()} }
+                        if let Some(b) = &e.blocked {
+                            div { class: "small down", "{b}" }
+                        } else if e.suspect() {
+                            div {
+                                class: "small down",
+                                title: "Gaps over {fmt_bps(SUSPECT_EDGE_BPS)} are nearly always two different tokens sharing a ticker",
+                                "same token?"
+                            }
+                        }
                     },
                     None => rsx! { "–" },
                 }

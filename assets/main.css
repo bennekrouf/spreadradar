@@ -147,6 +147,8 @@ h3 { font-size: 13px; text-transform: uppercase; letter-spacing: .05em; color: v
 .listings td { vertical-align: top; }
 .scan-bar { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 8px; }
 .filters { display: flex; gap: 4px; }
+.filter-gap { width: 12px; }
+.num.warn { color: var(--amber); }
 .chip-btn {
   padding: 3px 10px; border-radius: 999px; border: 1px solid var(--border);
   background: none; color: var(--muted); font: inherit; font-size: 12px; cursor: pointer;
