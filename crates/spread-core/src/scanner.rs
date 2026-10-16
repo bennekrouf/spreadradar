@@ -10,6 +10,9 @@
 //! candle stands in, fetched once per token and cached on disk.
 //! Tokens are matched across exchanges by ticker, so two different tokens
 //! sharing a ticker look like one.
+//!
+//! Each row also carries its best cross-exchange edge: buy at the ask on one
+//! exchange, sell at the bid on another, from the same tickers.
 
 use std::collections::{HashMap, HashSet, VecDeque};
 use std::path::PathBuf;
@@ -21,7 +24,8 @@ use serde::de::DeserializeOwned;
 use serde::Deserialize;
 use tokio::sync::watch;
 
-use crate::model::{Event, EventKind};
+use crate::model::{Event, EventKind, Venue};
+use crate::EngineConfig;
 
 /// Listings trickle in a few a day and volumes move slowly: every five
 /// minutes is timely and keeps the ~8 MB of bulk downloads per scan light.
@@ -38,6 +42,13 @@ const MAX_EVENTS: usize = 200;
 pub const TIGHT_SPREAD_BPS: f64 = 20.0;
 /// …and at or over this, a warning: 1 % lost on every round trip.
 pub const WIDE_SPREAD_BPS: f64 = 100.0;
+/// An edge at or over this after fees is worth a look and goes in the log.
+pub const EDGE_NET_BPS: f64 = 30.0;
+/// A gap this wide is nearly always two tokens sharing a ticker, or a dead book.
+pub const SUSPECT_EDGE_BPS: f64 = 2_000.0;
+/// 24 h volume an exchange needs to count as one leg of an edge: under it the
+/// best bid or ask is often an order nobody has touched in hours.
+const EDGE_MIN_VOLUME_USD: f64 = 10_000.0;
 const DAY: i64 = 86_400;
 
 // ---------------------------------------------------------------------------
@@ -60,6 +71,51 @@ impl Exchange {
             Exchange::Bybit => "Bybit",
             Exchange::Okx => "OKX",
         }
+    }
+
+    fn venue(self) -> Venue {
+        match self {
+            Exchange::Gate => Venue::Gate,
+            Exchange::Mexc => Venue::Mexc,
+            Exchange::Bybit => Venue::Bybit,
+            Exchange::Okx => Venue::Okx,
+        }
+    }
+
+    /// The same regular-tier taker fee the Market tab uses.
+    pub fn taker_fee_bps(self) -> f64 {
+        EngineConfig::default().taker_fee_bps[self.venue().idx()]
+    }
+}
+
+/// Buy at the ask on one exchange, sell at the bid on another.
+#[derive(Debug, Clone, PartialEq)]
+pub struct Edge {
+    pub buy: Exchange,
+    pub sell: Exchange,
+    /// In bps of the mid between the two exchanges.
+    pub gross_bps: f64,
+    /// Gross minus the taker fee on both legs.
+    pub net_bps: f64,
+    /// Why the coins can't move from `buy` to `sell`. Only Gate publishes
+    /// deposit and withdrawal status, so `None` elsewhere means unknown.
+    pub blocked: Option<String>,
+}
+
+impl Edge {
+    /// Too wide to be the same token on a live book.
+    pub fn suspect(&self) -> bool {
+        self.gross_bps >= SUSPECT_EDGE_BPS
+    }
+
+    /// Clears fees by `EDGE_NET_BPS`, looks real and isn't known blocked.
+    pub fn open(&self) -> bool {
+        self.net_bps >= EDGE_NET_BPS && !self.suspect() && self.blocked.is_none()
+    }
+
+    /// "MEXC → Gate".
+    pub fn route(&self) -> String {
+        format!("{} → {}", self.buy.name(), self.sell.name())
     }
 }
 
@@ -96,6 +152,8 @@ pub struct NewListing {
     pub change_pct: Option<f64>,
     /// Bid/ask spread on its most traded venue, in bps of the mid.
     pub spread_bps: Option<f64>,
+    /// Best edge between two exchanges with enough volume; often negative.
+    pub edge: Option<Edge>,
     pub market_cap: Option<f64>,
     pub holders: Option<u64>,
     pub binance_futures: bool,
@@ -169,6 +227,10 @@ struct GateCurrency {
     /// "stocks", "metals", "indices"…: not crypto.
     #[serde(default)]
     category: Vec<String>,
+    #[serde(default)]
+    deposit_disabled: bool,
+    #[serde(default)]
+    withdraw_disabled: bool,
 }
 
 #[derive(Deserialize)]
@@ -261,6 +323,12 @@ impl Ticker {
     fn spread_bps(&self) -> Option<f64> {
         let (bid, ask) = (self.bid?, self.ask?);
         (bid > 0.0 && ask >= bid).then(|| (ask - bid) / ((ask + bid) / 2.0) * 1e4)
+    }
+
+    /// Both sides quoted and not crossed.
+    fn mid(&self) -> Option<f64> {
+        self.spread_bps()?;
+        Some((self.bid? + self.ask?) / 2.0)
     }
 }
 
@@ -579,6 +647,7 @@ fn row(src: &Sources, base: &str, name: &str, listed_at: i64, now: i64) -> NewLi
             spread_bps: t.spread_bps(),
         })
         .collect();
+    let edge = best_edge(&tickers, src.gate_currencies.get(base));
     let alpha = src.alpha.get(base);
     let market_cap = alpha
         .and_then(|a| num(&a.market_cap))
@@ -610,6 +679,7 @@ fn row(src: &Sources, base: &str, name: &str, listed_at: i64, now: i64) -> NewLi
         venues,
         change_pct: main.and_then(|t| t.change_pct),
         spread_bps: main.and_then(|t| t.spread_bps()),
+        edge,
         market_cap,
         holders: alpha.and_then(|a| a.holders.as_deref()?.parse().ok()),
         binance_futures: src.binance_futures.contains(base),
@@ -620,6 +690,49 @@ fn row(src: &Sources, base: &str, name: &str, listed_at: i64, now: i64) -> NewLi
     };
     (r.signals, r.score) = assess(&r, now);
     r
+}
+
+/// The edge with the highest net among exchanges with enough volume, the
+/// same way the Market tab prices a route.
+fn best_edge(tickers: &[(Exchange, Ticker)], gate: Option<&GateCurrency>) -> Option<Edge> {
+    let legs: Vec<(Exchange, Ticker, f64)> = tickers
+        .iter()
+        .filter(|(_, t)| t.volume_usd.is_some_and(|v| v >= EDGE_MIN_VOLUME_USD))
+        .filter_map(|(e, t)| Some((*e, *t, t.mid()?)))
+        .collect();
+    let mut best: Option<Edge> = None;
+    for (buy, b, buy_mid) in &legs {
+        for (sell, s, sell_mid) in &legs {
+            if buy == sell {
+                continue;
+            }
+            let (Some(ask), Some(bid)) = (b.ask, s.bid) else {
+                continue;
+            };
+            let gross_bps = (bid - ask) / ((buy_mid + sell_mid) / 2.0) * 1e4;
+            let net_bps = gross_bps - buy.taker_fee_bps() - sell.taker_fee_bps();
+            if best.as_ref().is_some_and(|e| e.net_bps >= net_bps) {
+                continue;
+            }
+            let blocked = gate.and_then(|c| {
+                if *buy == Exchange::Gate && c.withdraw_disabled {
+                    Some("Gate withdrawals closed")
+                } else if *sell == Exchange::Gate && c.deposit_disabled {
+                    Some("Gate deposits closed")
+                } else {
+                    None
+                }
+            });
+            best = Some(Edge {
+                buy: *buy,
+                sell: *sell,
+                gross_bps,
+                net_bps,
+                blocked: blocked.map(str::to_owned),
+            });
+        }
+    }
+    best
 }
 
 /// The reasons to look closer, and the warnings, behind the score.
@@ -697,6 +810,12 @@ pub fn fmt_bps(bps: f64) -> String {
     }
 }
 
+/// "+48 bps", "-27 bps": an edge, which is negative most of the time.
+pub fn fmt_edge(bps: f64) -> String {
+    let sign = if bps < 0.0 { "-" } else { "+" };
+    format!("{sign}{}", fmt_bps(bps.abs()))
+}
+
 pub fn fmt_pct(bps: f64) -> String {
     if bps < 10.0 {
         format!("{:.3} %", bps / 100.0)
@@ -738,6 +857,13 @@ impl NewListing {
         }
         if let Some(s) = self.spread_bps {
             parts.push(format!("spread {}", fmt_spread(s)));
+        }
+        if let Some(e) = &self.edge {
+            let mut edge = format!("edge {} net {}", fmt_edge(e.net_bps), e.route());
+            if let Some(b) = &e.blocked {
+                edge.push_str(&format!(" ({b})"));
+            }
+            parts.push(edge);
         }
         let mut score = format!("score {}", self.score);
         for (label, list) in [("+", pick(true)), ("-", pick(false))] {
@@ -951,7 +1077,41 @@ impl Scanner {
         self.out.send_replace(self.snap.clone());
     }
 
+    /// Logs edges that open, move to another route or close since the
+    /// last scan.
+    fn log_edges(&mut self, rows: &[NewListing]) {
+        let mut edge_log = |text: String| {
+            tracing::info!("scanner: {text}");
+            self.events
+                .push_front(Event::now(EventKind::Opportunity, text));
+        };
+        for r in rows {
+            let was = self
+                .prev
+                .get(&r.symbol)
+                .and_then(|p| p.edge.as_ref())
+                .filter(|e| e.open());
+            match (r.edge.as_ref().filter(|e| e.open()), was) {
+                (Some(e), _) => {
+                    if was.is_none_or(|w| w.buy != e.buy || w.sell != e.sell) {
+                        edge_log(format!(
+                            "{}: buy on {}, sell on {}: {} net ({} gross)",
+                            r.symbol,
+                            e.buy.name(),
+                            e.sell.name(),
+                            fmt_edge(e.net_bps),
+                            fmt_edge(e.gross_bps)
+                        ));
+                    }
+                }
+                (None, Some(w)) => edge_log(format!("{}: {} edge closed", r.symbol, w.route())),
+                (None, None) => {}
+            }
+        }
+    }
+
     fn log_changes(&mut self, rows: &[NewListing]) {
+        self.log_edges(rows);
         let mut log = |text: String| {
             tracing::info!("scanner: {text}");
             self.events.push_front(Event::now(EventKind::Listing, text));
@@ -1045,6 +1205,8 @@ mod tests {
                 currency: "AAPLX".into(),
                 market_cap: None,
                 category: vec!["stocks".into()],
+                deposit_disabled: false,
+                withdraw_disabled: false,
             },
         );
         let ticker = |vol: f64, change: f64, bid: f64, ask: f64| Ticker {
@@ -1106,7 +1268,7 @@ mod tests {
             newt.summary_line(),
             format!(
                 "NEWT (Newt) | listed 5 d ago ({}) | Gate $800k, MEXC $400k, Bybit $300k | vol $1.5M | 24h +12.0 % \
-                 | spread 12 bps (0.12 %) | score 7 + Binance futures, on Bybit, Gate + MEXC, vol $1.5M, tight spread 12 bps (0.12 %)",
+                 | spread 12 bps (0.12 %) | edge -27 bps net Gate → MEXC | score 7 + Binance futures, on Bybit, Gate + MEXC, vol $1.5M, tight spread 12 bps (0.12 %)",
                 newt.listed_date
             )
         );
@@ -1123,6 +1285,56 @@ mod tests {
             .iter()
             .any(|s| !s.good && s.text == "wide spread 198 bps (1.98 %)"));
         assert!(mx1.score < 0);
+    }
+
+    #[test]
+    fn prices_the_best_edge_between_exchanges() {
+        let t = |vol: f64, bid: f64, ask: f64| Ticker {
+            volume_usd: Some(vol),
+            change_pct: None,
+            bid: Some(bid),
+            ask: Some(ask),
+        };
+        let gate = |deposit_disabled: bool, withdraw_disabled: bool| GateCurrency {
+            currency: "X".into(),
+            market_cap: None,
+            category: Vec::new(),
+            deposit_disabled,
+            withdraw_disabled,
+        };
+        let tickers = [
+            (Exchange::Mexc, t(50_000.0, 1.000, 1.001)),
+            (Exchange::Gate, t(80_000.0, 1.010, 1.011)),
+            // Crossed far above everyone, but too thin to count.
+            (Exchange::Okx, t(2_000.0, 1.200, 1.201)),
+        ];
+        let e = best_edge(&tickers, None).unwrap();
+        // (1.010 - 1.001) / 1.0055 ≈ 89.5 bps, minus 5 (MEXC) and 10 (Gate).
+        assert_eq!((e.buy, e.sell), (Exchange::Mexc, Exchange::Gate));
+        assert!((e.gross_bps - 89.51).abs() < 0.01, "{e:?}");
+        assert!((e.gross_bps - e.net_bps - 15.0).abs() < 1e-9);
+        assert!(e.open());
+        assert_eq!(e.route(), "MEXC → Gate");
+        assert_eq!(fmt_edge(e.net_bps), "+75 bps");
+
+        // Selling on Gate needs deposits there; withdrawals don't matter.
+        assert!(best_edge(&tickers, Some(&gate(false, true)))
+            .unwrap()
+            .open());
+        let blocked = best_edge(&tickers, Some(&gate(true, false))).unwrap();
+        assert_eq!(blocked.blocked.as_deref(), Some("Gate deposits closed"));
+        assert!(!blocked.open());
+
+        // A 50 % gap is two tokens sharing a ticker, not money on the table.
+        let twins = [
+            (Exchange::Mexc, t(50_000.0, 1.0, 1.001)),
+            (Exchange::Bybit, t(50_000.0, 1.6, 1.601)),
+        ];
+        let e = best_edge(&twins, None).unwrap();
+        assert!(e.suspect() && !e.open());
+
+        // One exchange alone has no edge.
+        assert_eq!(best_edge(&tickers[..1], None), None);
     }
 
     #[test]
@@ -1144,6 +1356,7 @@ mod tests {
         assert_eq!(age(NOW - 90 * 60, NOW), "1 h ago");
         assert_eq!(fmt_spread(0.28), "0.3 bps (0.003 %)");
         assert_eq!(fmt_spread(177.4), "177 bps (1.77 %)");
+        assert_eq!(fmt_edge(-4.25), "-4.2 bps");
     }
 
     #[test]
@@ -1194,6 +1407,24 @@ mod tests {
                 r.age,
                 r.score,
                 fmt_usd(r.volume_usd)
+            );
+        }
+        let mut edged: Vec<&NewListing> = rows.iter().filter(|r| r.edge.is_some()).collect();
+        edged.sort_by(|a, b| {
+            let net = |r: &NewListing| r.edge.as_ref().map_or(f64::MIN, |e| e.net_bps);
+            net(b).total_cmp(&net(a))
+        });
+        for r in edged.iter().take(15) {
+            let e = r.edge.as_ref().unwrap();
+            println!(
+                "{:>10} {:>14} net {:>9} gross {:>9} open {} suspect {} {:?}",
+                r.symbol,
+                e.route(),
+                fmt_edge(e.net_bps),
+                fmt_edge(e.gross_bps),
+                e.open(),
+                e.suspect(),
+                e.blocked
             );
         }
         assert!(!rows.is_empty());
