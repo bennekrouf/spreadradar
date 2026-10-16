@@ -6,7 +6,7 @@ resolver = "2"
 
 [package]
 name = "spreadradar"
-version = "0.1.9"
+version = "0.1.10"
 edition = "2021"
 default-run = "spreadradar"
 description = "Cross-venue crypto spreads, lead/lag and new listings, with Jupiter swaps"
