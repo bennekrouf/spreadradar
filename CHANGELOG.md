@@ -13,6 +13,20 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Each heading is dated on the day its tag was pushed.
 
+## [Unreleased]
+
+### Added
+
+- Light mode. SpreadRadar now matches your computer's light or dark setting
+  and follows it when it changes. The sun/moon button at the top right switches
+  between the two.
+
+### Fixed
+
+- On Windows and Linux, the SpreadRadar window now shows its icon in the
+  title bar, the taskbar and the app switcher, instead of a blank or generic
+  one.
+
 ## [0.1.9] - 2026-10-14
 
 ### Changed
