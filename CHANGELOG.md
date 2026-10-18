@@ -13,6 +13,19 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Each heading is dated on the day its tag was pushed.
 
+## [Unreleased]
+
+### Added
+
+- Use SpreadRadar from Claude. The new **MCP** button next to Get Pro… shows
+  what to paste into Claude Desktop, or the one line to run for Claude Code,
+  already pointing at where SpreadRadar is installed. Claude can then read
+  your watchlist's prices and best edges, look at one asset venue by venue
+  (routes before and after fees, which venue lags), list what Gate and MEXC
+  just listed that Binance doesn't have, and add or remove assets. An asset
+  Claude adds or removes shows up in the open app within a couple of
+  seconds. Trading stays in the app.
+
 ## [0.1.11] - 2026-10-16
 
 ### Added

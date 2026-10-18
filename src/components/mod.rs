@@ -1,5 +1,6 @@
 mod event_log;
 mod lag;
+mod mcp;
 mod pro;
 mod routes;
 mod scanner;
@@ -9,6 +10,7 @@ mod watchlist;
 
 pub use event_log::EventLog;
 pub use lag::LagPanel;
+pub use mcp::{McpButton, McpOpen, McpWindow};
 pub use pro::{Pro, ProButton, ProWindow};
 pub use routes::RoutesPanel;
 pub use scanner::NewListingsPanel;
