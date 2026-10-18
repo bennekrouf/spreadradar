@@ -1,5 +1,6 @@
 mod components;
 mod licence;
+mod mcp;
 mod notice;
 mod telemetry;
 mod theme;
@@ -16,8 +17,8 @@ use spread_core::{EngineConfig, MarketCmd, MarketSnapshot};
 use tokio::sync::{mpsc, watch};
 
 use components::{
-    EventLog, LagPanel, NewListingsPanel, Pro, ProButton, ProWindow, RoutesPanel, Tab, TradePanel,
-    VenueCard, Watchlist,
+    EventLog, LagPanel, McpButton, McpOpen, McpWindow, NewListingsPanel, Pro, ProButton, ProWindow,
+    RoutesPanel, Tab, TradePanel, VenueCard, Watchlist,
 };
 
 /// The trade module swaps SOL/USDT only.
@@ -28,6 +29,12 @@ const MAIN_CSS: &str = include_str!("../assets/main.css");
 const UI_REFRESH: Duration = Duration::from_millis(100);
 
 fn main() {
+    // `spreadradar mcp`: the market over stdio for an MCP client, and no
+    // window. Before the log is set up: here it would go to stdout, which
+    // there is the protocol.
+    if std::env::args().nth(1).as_deref() == Some("mcp") {
+        return mcp::serve();
+    }
     tracing_subscriber::fmt()
         .with_env_filter(
             tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()),
@@ -135,6 +142,7 @@ fn App() -> Element {
         open: Signal::new(false),
         status: Signal::new(licence::current()),
     });
+    use_context_provider(|| McpOpen(Signal::new(false)));
     let market_cmds = use_context::<mpsc::Sender<MarketCmd>>();
     use_effect(move || {
         let limit = pro.status.read().asset_limit();
@@ -235,6 +243,7 @@ fn App() -> Element {
                 at_limit: m.at_limit,
             }
             ProWindow {}
+            McpWindow {}
             main { class: "app",
                 if let (Some(info), false) = (update_info.read().clone(), update_dismissed()) {
                     div { class: "banner",
@@ -321,6 +330,7 @@ fn App() -> Element {
                     }
                     // Which build is running, for bug reports and support.
                     span { class: "app-version", { concat!("v", env!("CARGO_PKG_VERSION")) } }
+                    McpButton {}
                     ProButton {}
                 }
                 if current == Tab::NewListings {

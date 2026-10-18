@@ -41,6 +41,9 @@ pub enum MarketCmd {
 /// Jupiter tokens below this liquidity are too thin to price anything.
 const MIN_JUPITER_LIQUIDITY_USD: f64 = 100_000.0;
 const PUBLISH_EVERY: Duration = Duration::from_millis(50);
+/// How often watchlist.json is checked for a change another process made: the
+/// app and `spreadradar mcp` (driven by Claude) each run a market on it.
+const WATCHLIST_CHECK_EVERY: Duration = Duration::from_secs(2);
 
 fn watchlist_path() -> PathBuf {
     crate::trade::config_dir().join("watchlist.json")
@@ -67,6 +70,12 @@ fn load_watchlist() -> Vec<Asset> {
 fn save_watchlist(assets: &[Asset]) -> std::io::Result<()> {
     std::fs::create_dir_all(crate::trade::config_dir())?;
     std::fs::write(watchlist_path(), serde_json::to_string_pretty(assets)?)
+}
+
+fn watchlist_mtime() -> Option<std::time::SystemTime> {
+    std::fs::metadata(watchlist_path())
+        .and_then(|m| m.modified())
+        .ok()
 }
 
 /// "sol", " $WIF " → "SOL", "WIF". `Err` explains what is wrong.
@@ -171,6 +180,7 @@ pub async fn run(
         gate_checking: HashSet::new(),
         symbols_tx,
         tokens_tx,
+        watchlist_seen: watchlist_mtime(),
     };
     for asset in load_watchlist() {
         market.track(asset);
@@ -189,6 +199,8 @@ pub async fn run(
     let (gate_tx, mut gate_results) = mpsc::channel::<(Arc<str>, anyhow::Result<GateListing>)>(64);
     let mut gate_poll = tokio::time::interval(listings::POLL_EVERY);
     gate_poll.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
+    let mut watchlist_check = tokio::time::interval(WATCHLIST_CHECK_EVERY);
+    watchlist_check.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
 
     loop {
         tokio::select! {
@@ -224,6 +236,11 @@ pub async fn run(
                 market.check_gate(&http, &gate_tx);
             }
             _ = gate_poll.tick() => market.check_gate(&http, &gate_tx),
+            _ = watchlist_check.tick() => {
+                if market.reload_if_changed() {
+                    market.check_gate(&http, &gate_tx);
+                }
+            }
             Some((symbol, result)) = gate_results.recv() => market.on_gate(symbol, result),
             _ = publish.tick() => {
                 out.send_replace(market.snapshot(Instant::now()));
@@ -251,6 +268,8 @@ struct Market {
     gate_checking: HashSet<Arc<str>>,
     symbols_tx: watch::Sender<Vec<Arc<str>>>,
     tokens_tx: watch::Sender<Vec<(Arc<str>, JupToken)>>,
+    /// watchlist.json's modification time as this market last read or wrote it.
+    watchlist_seen: Option<std::time::SystemTime>,
 }
 
 impl Market {
@@ -298,6 +317,55 @@ impl Market {
         if let Err(e) = save_watchlist(&assets) {
             self.notice = Some(format!("could not save the watchlist: {e}"));
         }
+        self.watchlist_seen = watchlist_mtime();
+    }
+
+    /// Follows the watchlist as another process saved it: assets added there
+    /// are followed here (or locked, past the limit), assets removed there are
+    /// dropped. Returns whether anything changed.
+    fn reload_if_changed(&mut self) -> bool {
+        if !self.persist {
+            return false;
+        }
+        let now = watchlist_mtime();
+        if now == self.watchlist_seen {
+            return false;
+        }
+        self.watchlist_seen = now;
+        self.reload(load_watchlist())
+    }
+
+    fn reload(&mut self, assets: Vec<Asset>) -> bool {
+        let wanted: HashSet<&str> = assets.iter().map(|a| a.symbol.as_str()).collect();
+        let before = (self.tracked.len(), self.locked.len());
+        self.tracked.retain(|t| wanted.contains(&*t.symbol));
+        self.locked.retain(|a| wanted.contains(a.symbol.as_str()));
+        let mut changed = before != (self.tracked.len(), self.locked.len());
+        for asset in assets {
+            let known = self.tracked.iter().any(|t| t.asset.symbol == asset.symbol)
+                || self.locked.iter().any(|a| a.symbol == asset.symbol);
+            if known {
+                continue;
+            }
+            changed = true;
+            if self.full() {
+                self.locked.push(asset);
+            } else {
+                self.track(asset);
+            }
+        }
+        if !changed {
+            return false;
+        }
+        if self
+            .selected
+            .as_ref()
+            .is_none_or(|s| !self.tracked.iter().any(|t| t.symbol == *s))
+        {
+            self.selected = self.tracked.first().map(|t| t.symbol.clone());
+        }
+        self.republish_lists();
+        true
     }
 
     fn route(&mut self, ev: MarketEvent) {
@@ -595,6 +663,7 @@ mod tests {
             gate_checking: HashSet::new(),
             symbols_tx,
             tokens_tx,
+            watchlist_seen: None,
         }
     }
 
@@ -611,6 +680,39 @@ mod tests {
 
     fn locked(m: &Market) -> Vec<&str> {
         m.locked.iter().map(|a| a.symbol.as_str()).collect()
+    }
+
+    #[test]
+    fn a_watchlist_saved_elsewhere_is_followed_within_the_limit() {
+        let mut m = market();
+        m.set_limit(Some(3));
+        for s in ["SOL", "BTC"] {
+            m.track(asset(s));
+        }
+        m.selected = Some("BTC".into());
+        // Another process removed BTC and added ETH, JUP and BONK.
+        assert!(m.reload(vec![
+            asset("SOL"),
+            asset("ETH"),
+            asset("JUP"),
+            asset("BONK")
+        ]));
+        assert_eq!(followed(&m), ["SOL", "ETH", "JUP"]);
+        assert_eq!(locked(&m), ["BONK"]);
+        assert_eq!(
+            m.selected.as_deref(),
+            Some("SOL"),
+            "a removed asset can't stay selected"
+        );
+        assert!(
+            !m.reload(vec![
+                asset("SOL"),
+                asset("ETH"),
+                asset("JUP"),
+                asset("BONK")
+            ]),
+            "nothing new"
+        );
     }
 
     #[test]

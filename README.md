@@ -102,6 +102,20 @@ exchanges, so two different tokens sharing a ticker look like one.
 
 ---
 
+## Use from Claude (MCP)
+
+`spreadradar mcp` serves the market to an MCP client over stdio, with no
+window (`src/mcp.rs`). It runs its own market and scanner, the same
+`spread_core::run` and `scanner::run` as the app, for as long as the client
+keeps it open. The **MCP** button next to Get Pro… shows the Claude Desktop
+config and the Claude Code command. The tools: `watchlist`, `asset` (with
+`watch_secs` to collect moves for lead/lag), `add_asset`, `remove_asset` and
+`new_listings`. The free version's limit applies, from the same licence check.
+
+Both the app and the server save `watchlist.json`; each market checks it
+every 2 s and follows what the other one saved (`Market::reload_if_changed`).
+Trading is not exposed: swaps stay in the app, behind its dry run and limits.
+
 ## Settings
 
 Everything lives in one folder:
