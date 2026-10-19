@@ -13,6 +13,14 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Each heading is dated on the day its tag was pushed.
 
+## [Unreleased]
+
+### Changed
+
+- SpreadRadar now includes the necessary Windows C runtime libraries, ensuring
+  it runs on any PC without requiring additional installations. This makes the
+  app more portable and easier to use for new users.
+
 ## [0.1.12] - 2026-10-18
 
 ### Added
