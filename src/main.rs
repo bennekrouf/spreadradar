@@ -1,4 +1,5 @@
 mod components;
+mod feedback;
 mod licence;
 mod mcp;
 mod notice;
@@ -331,6 +332,14 @@ fn App() -> Element {
                     // Which build is running, for bug reports and support.
                     span { class: "app-version", { concat!("v", env!("CARGO_PKG_VERSION")) } }
                     McpButton {}
+                    // A link, not a button: the webview hands it to the browser.
+                    a {
+                        class: "btn ghost",
+                        href: "{feedback::contact_url()}",
+                        target: "_blank",
+                        title: "Ideas, bugs, questions: send them to the person who makes SpreadRadar",
+                        "Feedback"
+                    }
                     ProButton {}
                 }
                 if current == Tab::NewListings {
