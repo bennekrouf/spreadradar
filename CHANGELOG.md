@@ -13,6 +13,14 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Each heading is dated on the day its tag was pushed.
 
+## [Unreleased]
+
+### Added
+
+- A Feedback button next to MCP opens the contact form with SpreadRadar and
+  your version already filled in, so an idea or a problem reaches us in two
+  clicks.
+
 ## [0.1.13] - 2026-10-19
 
 ### Changed
