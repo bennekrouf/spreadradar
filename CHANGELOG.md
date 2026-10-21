@@ -13,6 +13,15 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Each heading is dated on the day its tag was pushed.
 
+## [Unreleased]
+
+### Added
+
+- Free AI credits every month, without Pro. Enter your email under Get free
+  AI credits in the Pro window and the licence number arrives by email; paste
+  it in the same window. The window then shows how many credits are left this
+  month. The free version's limits stay as they are.
+
 ## [0.1.16] - 2026-10-21
 
 ### Changed
