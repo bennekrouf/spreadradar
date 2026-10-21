@@ -169,10 +169,6 @@ jobs:
       - name: Build universal binary
         if: env.HAVE_MAC_SECRETS == 'true'
         env:
-          # Public half of the key mayorana.ch signs Pro licences with (repository
-          # variable, not a secret). Without it the build can't check licences,
-          # and runs without the free version's limit.
-          SPREADRADAR_LICENSE_PUBLIC_KEY: ${{ vars.SPREADWATCH_LICENSE_PUBLIC_KEY }}
           # Where anonymous usage statistics go (repository variable, not a
           # secret). Unset, the build sends nothing and never asks.
           MAYORANA_TELEMETRY_URL: ${{ vars.MAYORANA_TELEMETRY_URL }}
@@ -297,10 +293,6 @@ jobs:
 
       - name: Build
         env:
-          # Public half of the key mayorana.ch signs Pro licences with (repository
-          # variable, not a secret). Without it the build can't check licences,
-          # and runs without the free version's limit.
-          SPREADRADAR_LICENSE_PUBLIC_KEY: ${{ vars.SPREADWATCH_LICENSE_PUBLIC_KEY }}
           # Where anonymous usage statistics go (repository variable, not a
           # secret). Unset, the build sends nothing and never asks.
           MAYORANA_TELEMETRY_URL: ${{ vars.MAYORANA_TELEMETRY_URL }}
@@ -443,10 +435,6 @@ jobs:
 
       - name: Build
         env:
-          # Public half of the key mayorana.ch signs Pro licences with (repository
-          # variable, not a secret). Without it the build can't check licences,
-          # and runs without the free version's limit.
-          SPREADRADAR_LICENSE_PUBLIC_KEY: ${{ vars.SPREADWATCH_LICENSE_PUBLIC_KEY }}
           # Where anonymous usage statistics go (repository variable, not a
           # secret). Unset, the build sends nothing and never asks.
           MAYORANA_TELEMETRY_URL: ${{ vars.MAYORANA_TELEMETRY_URL }}

@@ -13,6 +13,19 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Each heading is dated on the day its tag was pushed.
 
+## [Unreleased]
+
+### Changed
+
+- SpreadRadar Pro now comes with a monthly plan on mayorana.ch instead of a
+  one-time licence key. Paste the licence number from the plan's email (like
+  ABCDE-FGHJK-LMNPQ-RSTUV) in the Pro window. SpreadRadar checks it when it
+  starts and once a day, and Pro keeps working for a week without a
+  connection.
+- The Pro window shows your plan, the AI credits left this month and when the
+  plan renews. Manage subscription opens the page where you change or cancel
+  it.
+
 ## [0.1.15] - 2026-10-20
 
 ### Added

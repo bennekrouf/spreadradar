@@ -137,13 +137,22 @@ fn App() -> Element {
     let mut tab = use_context_provider(|| Signal::new(Tab::Market));
 
     // SpreadRadar Pro. The engine applies the watchlist limit; it is told
-    // again whenever the licence changes, so activating a key mid-session
+    // again whenever the licence changes, so activating a licence mid-session
     // follows every asset straight away.
     let pro = use_context_provider(|| Pro {
         open: Signal::new(false),
         status: Signal::new(licence::current()),
     });
     use_context_provider(|| McpOpen(Signal::new(false)));
+    // The licence is checked with api0 at start, then once a day.
+    let mut pro_status = pro.status;
+    use_future(move || async move {
+        pro_status.set(licence::refresh(true).await);
+        loop {
+            tokio::time::sleep(std::time::Duration::from_secs(3600)).await;
+            pro_status.set(licence::refresh(false).await);
+        }
+    });
     let market_cmds = use_context::<mpsc::Sender<MarketCmd>>();
     use_effect(move || {
         let limit = pro.status.read().asset_limit();
