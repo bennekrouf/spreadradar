@@ -286,6 +286,9 @@ a.btn { text-decoration: none; }
 .modal h2 { margin: 0; }
 .modal p { margin: 0; }
 .pro-ok { color: var(--green); }
+.free-credits { margin-top: 10px; }
+.free-row { display: flex; gap: 6px; align-items: center; }
+.free-row .licence-key { flex: 1; min-width: 0; }
 .licence-key {
   width: 100%; box-sizing: border-box; padding: 8px; border-radius: 6px; resize: vertical;
   background: var(--bg); color: var(--text); border: 1px solid var(--border);
