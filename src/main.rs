@@ -29,6 +29,15 @@ const MAIN_CSS: &str = include_str!("../assets/main.css");
 /// The engine publishes every 50 ms; the UI only needs to repaint this often.
 const UI_REFRESH: Duration = Duration::from_millis(100);
 
+/// The native title bar, as in every mayorana app: name, version and licence.
+fn window_title(status: &licence::Status) -> String {
+    format!(
+        "SpreadRadar {}{}",
+        env!("CARGO_PKG_VERSION"),
+        status.title_badge()
+    )
+}
+
 fn main() {
     // `spreadradar mcp`: the market over stdio for an MCP client, and no
     // window. Before the log is set up: here it would go to stdout, which
@@ -89,7 +98,7 @@ fn main() {
         .with_custom_head(format!("<style>{MAIN_CSS}</style>"))
         .with_window(
             dioxus::desktop::WindowBuilder::new()
-                .with_title(concat!("SpreadRadar ", env!("CARGO_PKG_VERSION")))
+                .with_title(window_title(&licence::current()))
                 .with_inner_size(LogicalSize::new(1420.0, 940.0))
                 .with_window_icon(window_icon()),
         );
@@ -144,6 +153,10 @@ fn App() -> Element {
         status: Signal::new(licence::current()),
     });
     use_context_provider(|| McpOpen(Signal::new(false)));
+    // The title bar follows the licence, however it changes.
+    use_effect(move || {
+        dioxus::desktop::window().set_title(&window_title(&pro.status.read()));
+    });
     // The licence is checked with api0 at start, then once a day.
     let mut pro_status = pro.status;
     use_future(move || async move {
