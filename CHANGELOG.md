@@ -13,6 +13,15 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Each heading is dated on the day its tag was pushed.
 
+## [Unreleased]
+
+### Changed
+
+- One licence number for every Mayorana app on this computer. Paste it in any
+  of them and the others are Pro too the next time they start, with nothing to
+  paste again; a number already pasted in one app is shared the same way.
+  Removing the licence in the Pro window removes it from all of them.
+
 ## [0.1.17] - 2026-10-21
 
 ### Added
