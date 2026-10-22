@@ -13,6 +13,15 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Each heading is dated on the day its tag was pushed.
 
+## [Unreleased]
+
+### Changed
+
+- The window title now shows your licence state next to the app name and
+  version: a star and Pro when Pro is active, and Pro inactive when a Pro
+  licence has lapsed or could not be checked. It updates as soon as the licence
+  changes, so you can see your status without opening the Pro window.
+
 ## [0.1.18] - 2026-10-22
 
 ### Changed
