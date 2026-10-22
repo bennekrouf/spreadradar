@@ -93,6 +93,10 @@ jobs:
   build-mac:
     needs: [prepare]
     runs-on: macos-latest
+    # A notarization that never answers otherwise holds the job for GitHub's
+    # 6-hour limit, and the release job then publishes late (see the latest/
+    # guard in the publish step).
+    timeout-minutes: 90
     env:
       TAG: ${{ needs.prepare.outputs.tag }}
       SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
@@ -247,7 +251,7 @@ jobs:
           P8="$RUNNER_TEMP/AuthKey_${APP_STORE_KEY_ID}.p8"
           echo "$APP_STORE_KEY" | base64 --decode > "$P8"
           xcrun notarytool submit "$DMG" --key "$P8" --key-id "$APP_STORE_KEY_ID" \
-            --issuer "$APP_STORE_ISSUER_ID" --wait
+            --issuer "$APP_STORE_ISSUER_ID" --wait --timeout 45m
           rm -f "$P8"
           xcrun stapler staple "$DMG"
           xcrun stapler validate "$DMG"
@@ -573,6 +577,17 @@ jobs:
           # Versioned copy first: if latest/ then fails, the release is still
           # reachable at its immutable URL.
           rsync -av --chmod=F644 -e "$SSH" release/ "$SSH_USER@$SSH_HOST:$ROOT/$TAG/"
+          # A run that finishes late must not roll latest/ back: v0.1.18's
+          # release job ran hours after v0.1.19's and replaced it with a build
+          # that had no DMG.
+          VER="${TAG#v}"
+          PUBLISHED=$(curl -fsS "https://mayorana.ch/downloads/$APP/latest/latest.json" \
+            | python3 -c 'import json,sys; print(json.load(sys.stdin)["version"])' 2>/dev/null || echo "")
+          if [ -n "$PUBLISHED" ] && [ "$PUBLISHED" != "$VER" ] \
+             && [ "$(printf '%s\n%s\n' "$PUBLISHED" "$VER" | sort -V | tail -n1)" = "$PUBLISHED" ]; then
+            echo "::warning::latest/ already serves $PUBLISHED, newer than $VER — leaving it; $TAG is at $ROOT/$TAG/."
+            exit 0
+          fi
           rsync -av --delete --chmod=F644 -e "$SSH" release/ "$SSH_USER@$SSH_HOST:$ROOT/latest/"
           echo "Published $TAG → $SSH_HOST:$ROOT/{$TAG,latest}/"
 
