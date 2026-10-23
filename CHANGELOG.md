@@ -13,6 +13,14 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Each heading is dated on the day its tag was pushed.
 
+## [Unreleased]
+
+### Changed
+
+- The new-version banner and the usage-statistics notice now look the same
+  as in GitAgent: a blue bar across the top, or the bottom for the notice,
+  with a Download link and a × to hide it.
+
 ## [0.1.22] - 2026-10-23
 
 ### Changed
