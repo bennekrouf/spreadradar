@@ -13,6 +13,18 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Each heading is dated on the day its tag was pushed.
 
+## [Unreleased]
+
+### Changed
+
+- Buttons now have the same size, rounded corners and typeface as in
+  GitAgent, so they look alike across the Mayorana apps.
+
+### Fixed
+
+- The PRO button in the top-right corner is no longer hidden behind the
+  light/dark switch.
+
 ## [0.1.20] - 2026-10-22
 
 ### Changed
