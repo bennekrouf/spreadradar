@@ -13,6 +13,17 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Each heading is dated on the day its tag was pushed.
 
+## [Unreleased]
+
+### Changed
+
+- Dialogs now have a title bar with a × to close them, and text fields have
+  the same size and typeface as in GitAgent.
+- An open dialog now dims the light/dark switch in the corner along with the
+  rest of the window, instead of leaving it lit on top.
+- The buttons along the top of the window now all have the same height,
+  borders included, and the light/dark switch matches them.
+
 ## [0.1.21] - 2026-10-23
 
 ### Changed
