@@ -69,36 +69,41 @@ pub fn McpWindow() -> Element {
             div {
                 class: "modal card mcp-modal",
                 onclick: move |e| e.stop_propagation(),
-                h2 { "Use SpreadRadar from Claude" }
-                p { class: "muted small",
-                    "Ask Claude about the market: where the widest edges are right now, which venue lags, \
-                     what Gate and MEXC just listed that Binance doesn't have. It can add and remove assets \
-                     in your watchlist too, and this window follows. Trading stays here, in the app."
+                div { class: "modal-head",
+                    h2 { "Use SpreadRadar from Claude" }
+                    button { class: "modal-close", title: "Close", onclick: move |_| open.set(false), "×" }
                 }
-                h3 { "1 · Claude Desktop" }
-                p { class: "muted small",
-                    "Settings \u{2192} Developer \u{2192} Edit Config, paste this in and save, then quit Claude \
-                     and open it again. If the file already has an mcpServers section, add just the \
-                     spreadradar entry to it."
-                }
-                Snippet { text: desktop.clone() }
-                p { class: "muted small mcp-path", "The file: {desktop_config_path()}" }
-                h3 { "2 · Claude Code" }
-                p { class: "muted small", "Run this once in a terminal:" }
-                Snippet { text: code.clone() }
-                h3 { "3 · Try it" }
-                p { class: "muted small",
-                    "Ask: \u{201c}Where is SOL cheapest to buy right now, after fees?\u{201d}, or \u{201c}What did \
-                     Gate list this week that looks serious?\u{201d}"
-                }
-                p { class: "muted small mcp-note",
-                    "Claude in the browser (claude.ai) can\u{2019}t use this: it only connects to servers on the \
-                     internet, and SpreadRadar runs on your computer. Any other app that speaks MCP can, with \
-                     the same command: "
-                    code { "{command} mcp" }
-                }
-                div { class: "modal-actions",
-                    button { class: "btn ghost", onclick: move |_| open.set(false), "Close" }
+                div { class: "modal-body",
+                    p { class: "muted small",
+                        "Ask Claude about the market: where the widest edges are right now, which venue lags, \
+                         what Gate and MEXC just listed that Binance doesn't have. It can add and remove assets \
+                         in your watchlist too, and this window follows. Trading stays here, in the app."
+                    }
+                    h3 { "1 · Claude Desktop" }
+                    p { class: "muted small",
+                        "Settings \u{2192} Developer \u{2192} Edit Config, paste this in and save, then quit Claude \
+                         and open it again. If the file already has an mcpServers section, add just the \
+                         spreadradar entry to it."
+                    }
+                    Snippet { text: desktop.clone() }
+                    p { class: "muted small mcp-path", "The file: {desktop_config_path()}" }
+                    h3 { "2 · Claude Code" }
+                    p { class: "muted small", "Run this once in a terminal:" }
+                    Snippet { text: code.clone() }
+                    h3 { "3 · Try it" }
+                    p { class: "muted small",
+                        "Ask: \u{201c}Where is SOL cheapest to buy right now, after fees?\u{201d}, or \u{201c}What did \
+                         Gate list this week that looks serious?\u{201d}"
+                    }
+                    p { class: "muted small mcp-note",
+                        "Claude in the browser (claude.ai) can\u{2019}t use this: it only connects to servers on the \
+                         internet, and SpreadRadar runs on your computer. Any other app that speaks MCP can, with \
+                         the same command: "
+                        code { "{command} mcp" }
+                    }
+                    div { class: "modal-actions",
+                        button { class: "btn ghost", onclick: move |_| open.set(false), "Close" }
+                    }
                 }
             }
         }
