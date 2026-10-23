@@ -269,14 +269,14 @@ fn App() -> Element {
             McpWindow {}
             main { class: "app",
                 if let (Some(info), false) = (update_info.read().clone(), update_dismissed()) {
-                    div { class: "banner",
-                        span { class: "banner-text",
+                    div { class: "update-banner",
+                        span { class: "update-banner-text",
                             "SpreadRadar "
                             strong { "{info.latest_version}" }
                             " is available (you have {env!(\"CARGO_PKG_VERSION\")})."
                         }
                         button {
-                            class: "banner-link",
+                            class: "update-banner-link",
                             onclick: move |_| {
                                 telemetry::record(telemetry::Event::UpdateClicked {
                                     to: info.latest_version.clone(),
@@ -285,15 +285,15 @@ fn App() -> Element {
                             },
                             "Download"
                         }
-                        button { class: "banner-dismiss", onclick: move |_| update_dismissed.set(true), "×" }
+                        button { class: "update-banner-dismiss", onclick: move |_| update_dismissed.set(true), "×" }
                     }
                 }
                 if let Some(n) = mayorana_notice.read().clone() {
-                    div { class: "banner notice",
-                        span { class: "banner-text", "{n.text}" }
+                    div { class: "update-banner notice-banner",
+                        span { class: "update-banner-text", "{n.text}" }
                         if let Some(url) = n.url.clone() {
                             button {
-                                class: "banner-link",
+                                class: "update-banner-link",
                                 onclick: move |_| {
                                     let _ = open::that(&url);
                                 },
@@ -301,7 +301,7 @@ fn App() -> Element {
                             }
                         }
                         button {
-                            class: "banner-dismiss",
+                            class: "update-banner-dismiss",
                             onclick: move |_| {
                                 notice::dismiss(&n.id);
                                 mayorana_notice.set(None);
@@ -313,14 +313,14 @@ fn App() -> Element {
                 // Usage-statistics notice, once, in the same place and style as
                 // the other banners. Either button is remembered.
                 if ask_consent() {
-                    div { class: "banner notice",
-                        span { class: "banner-text",
+                    div { class: "consent-banner",
+                        span { class: "update-banner-text",
                             strong { "SpreadRadar shares anonymous usage statistics. " }
                             "Whether it is installed and opened, and its version and operating \
                              system — never your watchlist, trades, keys or anything you type."
                         }
                         button {
-                            class: "banner-link",
+                            class: "update-banner-link",
                             onclick: move |_| {
                                 telemetry::set_consent(true);
                                 ask_consent.set(false);
@@ -328,7 +328,7 @@ fn App() -> Element {
                             "OK"
                         }
                         button {
-                            class: "banner-link",
+                            class: "update-banner-link",
                             onclick: move |_| {
                                 telemetry::set_consent(false);
                                 ask_consent.set(false);
