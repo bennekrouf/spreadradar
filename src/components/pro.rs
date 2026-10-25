@@ -13,6 +13,13 @@ pub struct Pro {
     pub status: Signal<Status>,
 }
 
+/// Sends `true` for each Escape pressed in the page. The handler is kept on
+/// `window` and replaced on each mount, so two never stack.
+const ESCAPE_JS: &str =
+    "if (window._proEscape) window.removeEventListener('keydown', window._proEscape);\
+     window._proEscape = (e) => { if (e.key === 'Escape') dioxus.send(true); };\
+     window.addEventListener('keydown', window._proEscape);";
+
 /// "Get Pro…" while free, "✦ PRO" once licensed; opens the window either way.
 #[component]
 pub fn ProButton() -> Element {
@@ -54,6 +61,21 @@ pub fn ProWindow() -> Element {
     let mut free_email = use_signal(String::new);
     let mut free_note = use_signal(|| Option::<String>::None);
     let mut free_hidden = use_signal(|| false);
+    // Set by an Activate that made SpreadRadar Pro, so the window
+    // congratulates rather than just reporting it.
+    let mut activated = use_signal(|| false);
+    // Escape closes the window wherever the focus is: the Pro view has no
+    // field to listen on.
+    use_future(move || async move {
+        let mut open = pro.open;
+        let mut keys = document::eval(ESCAPE_JS);
+        while keys.recv::<bool>().await.is_ok() {
+            if *open.peek() {
+                open.set(false);
+                activated.set(false);
+            }
+        }
+    });
     if !(pro.open)() {
         return rsx! {};
     }
@@ -63,6 +85,7 @@ pub fn ProWindow() -> Element {
     let offers_free = matches!(status, Status::Free | Status::Unknown(_)) && !free_hidden();
     let mut close = move || {
         pro.open.set(false);
+        activated.set(false);
         error.set(None);
     };
     let mut activate = move || {
@@ -71,6 +94,7 @@ pub fn ProWindow() -> Element {
         spawn(async move {
             match licence::activate(&pasted).await {
                 Ok(s) => {
+                    activated.set(matches!(s, Status::Pro(_)));
                     pro.status.set(s);
                     key.set(String::new());
                     error.set(None);
@@ -117,6 +141,39 @@ pub fn ProWindow() -> Element {
             busy.set(false);
         });
     };
+
+    if let Status::Pro(a) = &status {
+        let number = a.licence.clone();
+        return rsx! {
+            div { class: "modal-backdrop", onclick: move |_| close(),
+                div {
+                    class: "modal card pro-done",
+                    onclick: move |e| e.stop_propagation(),
+                    button { class: "modal-close", title: "Close", onclick: move |_| close(), "×" }
+                    div { class: "pro-done-mark", "✓" }
+                    h2 { class: "pro-done-title",
+                        if activated() { "Congratulations, you're Pro!" } else { "You're Pro" }
+                    }
+                    p { class: "pro-done-sub", "Licence validated." }
+                    p { class: "pro-done-meta",
+                        "{a.credits.left} AI credits left this month"
+                        br {}
+                        "{a.renewal()}"
+                    }
+                    button {
+                        class: "pro-done-manage",
+                        disabled: busy(),
+                        title: "Change or cancel the plan on mayorana.ch",
+                        onclick: move |_| manage(number.clone()),
+                        "Manage subscription"
+                    }
+                    if let Some(e) = error.read().as_ref() {
+                        p { class: "pro-done-error", "{e}" }
+                    }
+                }
+            }
+        };
+    }
 
     rsx! {
         div { class: "modal-backdrop", onclick: move |_| close(),
@@ -240,7 +297,7 @@ pub fn ProWindow() -> Element {
                                 class: "btn",
                                 disabled: key.read().trim().is_empty() || busy(),
                                 onclick: move |_| activate(),
-                                "Activate"
+                                if busy() { span { class: "pro-spinner", title: "Checking the licence" } } else { "Activate" }
                             }
                         }
                         if let (Some(number), false) = (status.licence().map(str::to_owned), asks_number) {
