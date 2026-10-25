@@ -13,6 +13,16 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Each heading is dated on the day its tag was pushed.
 
+## [Unreleased]
+
+### Fixed
+
+- Installing silently, as IT does for an unattended update with `/VERYSILENT`,
+  no longer hangs when SpreadRadar is already installed: setup waited on a
+  question nobody could see. It now replaces the installed version without
+  asking, and stops with an error, instead of waiting, when the Microsoft
+  Edge WebView2 Runtime is missing.
+
 ## [0.1.23] - 2026-10-25
 
 ### Changed
