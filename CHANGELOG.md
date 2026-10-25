@@ -22,6 +22,9 @@ Each heading is dated on the day its tag was pushed.
   date in small type below. Removing the licence and checking it again no
   longer sit beside it; Manage subscription is a small link. Press Esc or
   the × to close it.
+- The new-version banner and the usage-statistics notice now look the same
+  as in GitAgent: a blue bar across the top, or the bottom for the notice,
+  with a Download link and a × to hide it.
 
 ## [0.1.22] - 2026-10-23
 
