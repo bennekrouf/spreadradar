@@ -13,6 +13,16 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Each heading is dated on the day its tag was pushed.
 
+## [Unreleased]
+
+### Changed
+
+- Activating a licence now shows a small spinner while it is checked, then
+  a window that says you're Pro, with the AI credits left and the renewal
+  date in small type below. Removing the licence and checking it again no
+  longer sit beside it; Manage subscription is a small link. Press Esc or
+  the × to close it.
+
 ## [0.1.22] - 2026-10-23
 
 ### Changed
