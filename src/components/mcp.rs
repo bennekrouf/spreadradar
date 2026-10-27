@@ -31,6 +31,12 @@ pub fn code_command(command: &str) -> String {
     format!("claude mcp add spreadradar --scope user -- \"{command}\" mcp")
 }
 
+/// The one line that adds it to Codex. Its CLI, IDE extension and app share
+/// one list of servers, each one there for every project.
+pub fn codex_command(command: &str) -> String {
+    format!("codex mcp add spreadradar -- \"{command}\" mcp")
+}
+
 /// Where Claude Desktop keeps its config.
 fn desktop_config_path() -> &'static str {
     if cfg!(target_os = "windows") {
@@ -48,7 +54,7 @@ pub fn McpButton() -> Element {
     rsx! {
         button {
             class: "btn ghost mcp-btn",
-            title: "Use SpreadRadar from Claude Desktop or Claude Code",
+            title: "Use SpreadRadar from Claude Desktop, Claude Code or Codex",
             onclick: move |_| open.set(true),
             "MCP"
         }
@@ -64,13 +70,14 @@ pub fn McpWindow() -> Element {
     let command = command();
     let desktop = desktop_config(&command);
     let code = code_command(&command);
+    let codex = codex_command(&command);
     rsx! {
         div { class: "modal-backdrop", onclick: move |_| open.set(false),
             div {
                 class: "modal card mcp-modal",
                 onclick: move |e| e.stop_propagation(),
                 div { class: "modal-head",
-                    h2 { "Use SpreadRadar from Claude" }
+                    h2 { "Use SpreadRadar from Claude or Codex" }
                     button { class: "modal-close", title: "Close", onclick: move |_| open.set(false), "×" }
                 }
                 div { class: "modal-body",
@@ -90,7 +97,10 @@ pub fn McpWindow() -> Element {
                     h3 { "2 · Claude Code" }
                     p { class: "muted small", "Run this once in a terminal:" }
                     Snippet { text: code.clone() }
-                    h3 { "3 · Try it" }
+                    h3 { "3 · Codex" }
+                    p { class: "muted small", "Run this once in a terminal:" }
+                    Snippet { text: codex.clone() }
+                    h3 { "4 · Try it" }
                     p { class: "muted small",
                         "Ask: \u{201c}Where is SOL cheapest to buy right now, after fees?\u{201d}, or \u{201c}What did \
                          Gate list this week that looks serious?\u{201d}"
@@ -156,6 +166,14 @@ mod tests {
         assert_eq!(
             code_command("/A B/spreadradar"),
             "claude mcp add spreadradar --scope user -- \"/A B/spreadradar\" mcp"
+        );
+    }
+
+    #[test]
+    fn the_codex_command_quotes_a_path_with_spaces() {
+        assert_eq!(
+            codex_command("/A B/spreadradar"),
+            "codex mcp add spreadradar -- \"/A B/spreadradar\" mcp"
         );
     }
 }
