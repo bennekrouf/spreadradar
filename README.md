@@ -1,5 +1,7 @@
 # SpreadRadar
 
+![SpreadRadar watching SOL/USDT on five exchanges and Jupiter, with the best cross-venue edges](docs/screenshot.png)
+
 A desktop app that watches the same crypto asset across five exchanges and
 Solana on-chain at once: where the price differs, which venue moves first, and
 which tokens just listed. It can also swap SOL/USDT on-chain through Jupiter
