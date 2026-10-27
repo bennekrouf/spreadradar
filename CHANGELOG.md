@@ -13,6 +13,13 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Each heading is dated on the day its tag was pushed.
 
+## [Unreleased]
+
+### Added
+
+- Added support for Codex: the MCP setup window now shows instructions for Codex
+  alongside Claude Desktop and Claude Code.
+
 ## [0.1.25] - 2026-10-27
 
 ### Changed
