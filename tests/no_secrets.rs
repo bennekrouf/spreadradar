@@ -11,7 +11,8 @@
 //! API keys — so it stays quiet enough that nobody is tempted to delete it.
 //! When it fires on something genuinely fine, use a placeholder like `"..."`
 //! rather than adding an exception.
-
+// A test or an example may panic: that is a failed run, not a crash anyone sees.
+#![allow(clippy::unwrap_used, clippy::expect_used)]
 use std::collections::BTreeSet;
 use std::path::Path;
 use std::process::Command;
