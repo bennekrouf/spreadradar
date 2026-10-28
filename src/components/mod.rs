@@ -1,17 +1,17 @@
 mod event_log;
 mod lag;
 mod mcp;
-mod pro;
+pub mod pro;
 mod routes;
 mod scanner;
 mod trade;
 mod venue_card;
 mod watchlist;
 
+pub use desktop_kit::ui::Pro;
 pub use event_log::EventLog;
 pub use lag::LagPanel;
 pub use mcp::{McpOpen, McpWindow};
-pub use pro::{Pro, ProButton, ProWindow};
 pub use routes::RoutesPanel;
 pub use scanner::NewListingsPanel;
 pub use trade::TradePanel;

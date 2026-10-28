@@ -307,7 +307,7 @@ async fn watchlist(live: &Live) -> Value {
         v["limit"] = json!(format!(
             "The free version follows {n} assets; locked ones stay in the list unfollowed. \
              SpreadRadar Pro follows any number: {}",
-            licence::BUY_URL
+            licence::buy_url()
         ));
     }
     v

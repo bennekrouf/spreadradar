@@ -2,13 +2,10 @@ mod components;
 mod kit;
 mod licence;
 mod mcp;
-mod notice;
-mod telemetry;
-mod update_check;
 
 use std::time::Duration;
 
-use desktop_kit::ui::{use_theme, Header};
+use desktop_kit::ui::{use_pro, use_theme, Banners, Header, ProButton, ProWindow};
 use dioxus::desktop::LogicalSize;
 use dioxus::prelude::*;
 use licence::StatusExt;
@@ -19,8 +16,8 @@ use spread_core::{EngineConfig, MarketCmd, MarketSnapshot};
 use tokio::sync::{mpsc, watch};
 
 use components::{
-    EventLog, LagPanel, McpOpen, McpWindow, NewListingsPanel, Pro, ProButton, ProWindow,
-    RoutesPanel, Tab, TradePanel, VenueCard, Watchlist,
+    EventLog, LagPanel, McpOpen, McpWindow, NewListingsPanel, RoutesPanel, Tab, TradePanel,
+    VenueCard, Watchlist,
 };
 
 /// The trade module swaps SOL/USDT only.
@@ -35,7 +32,7 @@ fn window_title(status: &licence::Status) -> String {
     format!(
         "SpreadRadar {}{}",
         env!("CARGO_PKG_VERSION"),
-        status.title_badge()
+        licence::title_badge(status)
     )
 }
 
@@ -153,23 +150,11 @@ fn App() -> Element {
     // SpreadRadar Pro. The engine applies the watchlist limit; it is told
     // again whenever the licence changes, so activating a licence mid-session
     // follows every asset straight away.
-    let pro = use_context_provider(|| Pro {
-        open: Signal::new(false),
-        status: Signal::new(licence::current()),
-    });
+    let pro = use_pro();
     let mut mcp_open = use_context_provider(|| McpOpen(Signal::new(false))).0;
     // The title bar follows the licence, however it changes.
     use_effect(move || {
         dioxus::desktop::window().set_title(&window_title(&pro.status.read()));
-    });
-    // The licence is checked with api0 at start, then once a day.
-    let mut pro_status = pro.status;
-    use_future(move || async move {
-        pro_status.set(licence::refresh(true).await);
-        loop {
-            tokio::time::sleep(std::time::Duration::from_secs(3600)).await;
-            pro_status.set(licence::refresh(false).await);
-        }
     });
     let market_cmds = use_context::<mpsc::Sender<MarketCmd>>();
     use_effect(move || {
@@ -203,45 +188,6 @@ fn App() -> Element {
         }
     });
 
-    // Update check and the notice from mayorana.ch: delayed so they never
-    // compete with the first quotes, best-effort, silent on failure.
-    let mut update_info = use_signal(|| Option::<update_check::UpdateInfo>::None);
-    let mut update_dismissed = use_signal(|| false);
-    use_future(move || async move {
-        tokio::time::sleep(Duration::from_secs(3)).await;
-        if let Some(info) = update_check::check().await {
-            telemetry::record(telemetry::Event::UpdateOffered {
-                to: info.latest_version.clone(),
-            });
-            update_info.set(Some(info));
-        }
-    });
-    let mut mayorana_notice = use_signal(|| Option::<notice::Notice>::None);
-    use_future(move || async move {
-        tokio::time::sleep(Duration::from_secs(4)).await;
-        if let Some(n) = notice::fetch().await {
-            mayorana_notice.set(Some(n));
-        }
-    });
-
-    // Anonymous usage statistics. On by default, but only once the person has
-    // been told: `start` reads the opt-outs (including a shell profile's),
-    // records the launch, and says whether the notice is still owed.
-    let mut ask_consent = use_signal(|| false);
-    use_future(move || async move {
-        if telemetry::start().await {
-            ask_consent.set(true);
-        }
-        telemetry::flush_forever().await;
-    });
-    // Recorded while the notice is on screen, so collection starts from the
-    // next event — never from one the person had no chance to read about.
-    use_effect(move || {
-        if ask_consent() {
-            telemetry::mark_informed();
-        }
-    });
-
     let m = snap.read();
     let s = &m.detail;
     let selected = m.selected.clone();
@@ -260,10 +206,11 @@ fn App() -> Element {
     let current = tab();
     let theme = use_theme();
     rsx! {
+        Banners { statistics: true }
         Header {
             theme,
             on_mcp: move |_| mcp_open.set(true),
-            pro: rsx! { ProButton {} },
+            pro: rsx! { ProButton { pro, hint: components::pro::hint() } },
             div { class: "kit-tabs",
                 button {
                     class: if current == Tab::Market { "kit-tab kit-on" } else { "kit-tab" },
@@ -290,78 +237,9 @@ fn App() -> Element {
                 limit: m.limit,
                 at_limit: m.at_limit,
             }
-            ProWindow {}
+            ProWindow { pro, pitch: components::pro::pitch() }
             McpWindow {}
             main { class: "app",
-                if let (Some(info), false) = (update_info.read().clone(), update_dismissed()) {
-                    div { class: "update-banner",
-                        span { class: "update-banner-text",
-                            "SpreadRadar "
-                            strong { "{info.latest_version}" }
-                            " is available (you have {env!(\"CARGO_PKG_VERSION\")})."
-                        }
-                        button {
-                            class: "update-banner-link",
-                            onclick: move |_| {
-                                telemetry::record(telemetry::Event::UpdateClicked {
-                                    to: info.latest_version.clone(),
-                                });
-                                let _ = open::that(&info.download_url);
-                            },
-                            "Download"
-                        }
-                        button { class: "update-banner-dismiss", onclick: move |_| update_dismissed.set(true), "×" }
-                    }
-                }
-                if let Some(n) = mayorana_notice.read().clone() {
-                    div { class: "update-banner notice-banner",
-                        span { class: "update-banner-text", "{n.text}" }
-                        if let Some(url) = n.url.clone() {
-                            button {
-                                class: "update-banner-link",
-                                onclick: move |_| {
-                                    let _ = open::that(&url);
-                                },
-                                {n.link_text.clone().unwrap_or_else(|| "Open".into())}
-                            }
-                        }
-                        button {
-                            class: "update-banner-dismiss",
-                            onclick: move |_| {
-                                notice::dismiss(&n.id);
-                                mayorana_notice.set(None);
-                            },
-                            "×"
-                        }
-                    }
-                }
-                // Usage-statistics notice, once, in the same place and style as
-                // the other banners. Either button is remembered.
-                if ask_consent() {
-                    div { class: "consent-banner",
-                        span { class: "update-banner-text",
-                            strong { "SpreadRadar shares anonymous usage statistics. " }
-                            "Whether it is installed and opened, and its version and operating \
-                             system — never your watchlist, trades, keys or anything you type."
-                        }
-                        button {
-                            class: "update-banner-link",
-                            onclick: move |_| {
-                                telemetry::set_consent(true);
-                                ask_consent.set(false);
-                            },
-                            "OK"
-                        }
-                        button {
-                            class: "update-banner-link",
-                            onclick: move |_| {
-                                telemetry::set_consent(false);
-                                ask_consent.set(false);
-                            },
-                            "Turn off"
-                        }
-                    }
-                }
                 if current == Tab::NewListings {
                     NewListingsPanel {
                         scan: scan.read().clone(),
