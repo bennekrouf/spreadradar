@@ -96,6 +96,8 @@ mod imp {
         if err != 0 {
             return Err(io::Error::from_raw_os_error(err as i32));
         }
+        // SAFETY: GetNamedSecurityInfoW succeeded, so `dacl` is null or an ACL inside `sd`,
+        // which is freed only after this.
         let found = unsafe { shared_reader(dacl) };
         // SAFETY: `sd` was allocated by GetNamedSecurityInfoW.
         unsafe { LocalFree(sd) };

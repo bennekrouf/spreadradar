@@ -1,5 +1,6 @@
 mod components;
 mod feedback;
+mod kit;
 mod licence;
 mod mcp;
 mod notice;
@@ -11,6 +12,7 @@ use std::time::Duration;
 
 use dioxus::desktop::LogicalSize;
 use dioxus::prelude::*;
+use licence::StatusExt;
 use spread_core::jupiter::JupiterApi;
 use spread_core::scanner::ScanSnapshot;
 use spread_core::trade::{TradeCmd, TradeConfig, TradeState};
@@ -39,6 +41,7 @@ fn window_title(status: &licence::Status) -> String {
 }
 
 fn main() {
+    kit::init();
     // `spreadradar mcp`: the market over stdio for an MCP client, and no
     // window. Before the log is set up: here it would go to stdout, which
     // there is the protocol.
@@ -72,6 +75,9 @@ fn main() {
     let (trade_tx, trade_rx) = watch::channel(TradeState::default());
     let (cmd_tx, cmd_rx) = mpsc::channel::<TradeCmd>(16);
     let (scan_tx, scan_rx) = watch::channel(ScanSnapshot::default());
+    // The operating system refusing a thread, or a runtime on it, leaves nothing to fall
+    // back to: without its market data the app has nothing to show.
+    #[allow(clippy::expect_used)]
     std::thread::Builder::new()
         .name("market-data".into())
         .spawn(move || {
@@ -281,7 +287,7 @@ fn App() -> Element {
                                 telemetry::record(telemetry::Event::UpdateClicked {
                                     to: info.latest_version.clone(),
                                 });
-                                let _ = open::that(&info.release_url);
+                                let _ = open::that(&info.download_url);
                             },
                             "Download"
                         }

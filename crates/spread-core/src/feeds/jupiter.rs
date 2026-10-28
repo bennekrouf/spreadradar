@@ -90,7 +90,8 @@ pub async fn run(
     let client = reqwest::Client::builder()
         .timeout(Duration::from_secs(5))
         .build()
-        .expect("http client");
+        // Settings the builder refuses still leave the plain client.
+        .unwrap_or_else(|_| reqwest::Client::new());
     let mut state = ConnState::Connecting;
     let mut pause = RATE_LIMITED_PAUSE;
     let mut next = 0usize;

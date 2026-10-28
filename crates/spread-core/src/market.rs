@@ -193,7 +193,8 @@ pub async fn run(
     let http = reqwest::Client::builder()
         .timeout(Duration::from_secs(10))
         .build()
-        .expect("http client");
+        // Settings the builder refuses still leave the plain client.
+        .unwrap_or_else(|_| reqwest::Client::new());
     let mut publish = tokio::time::interval(PUBLISH_EVERY);
     publish.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Skip);
     let (gate_tx, mut gate_results) = mpsc::channel::<(Arc<str>, anyhow::Result<GateListing>)>(64);

@@ -23,7 +23,7 @@ use spread_core::{EngineConfig, MarketCmd, MarketSnapshot};
 use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::sync::{mpsc, watch};
 
-use crate::licence;
+use crate::licence::{self, StatusExt};
 
 /// The newest protocol revision this server speaks. A client asking for an
 /// older one gets its own back; everything used here exists in all of them.
@@ -64,11 +64,17 @@ pub fn serve() {
             tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "warn".into()),
         )
         .init();
-    let runtime = tokio::runtime::Builder::new_multi_thread()
+    let runtime = match tokio::runtime::Builder::new_multi_thread()
         .worker_threads(2)
         .enable_all()
         .build()
-        .expect("tokio runtime");
+    {
+        Ok(runtime) => runtime,
+        Err(e) => {
+            eprintln!("spreadradar mcp: could not start: {e}");
+            std::process::exit(1);
+        }
+    };
     runtime.block_on(async {
         let (trade_cfg, _notices) = TradeConfig::load();
         let jupiter = JupiterApi::new(trade_cfg.jupiter_api_key, trade_cfg.jupiter_rpm);

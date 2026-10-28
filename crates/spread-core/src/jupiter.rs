@@ -7,7 +7,7 @@
 //! the feed always leaves room for trades.
 
 use std::collections::VecDeque;
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Mutex, PoisonError};
 use std::time::Duration;
 
 use tokio::time::Instant;
@@ -102,7 +102,7 @@ impl JupiterApi {
     /// afterwards. A poll that doesn't fit is skipped, not delayed.
     pub fn try_take(&self, n: u32, keep_free: u32) -> bool {
         let now = Instant::now();
-        let mut sent = self.sent.lock().expect("budget lock");
+        let mut sent = self.sent.lock().unwrap_or_else(PoisonError::into_inner);
         prune(&mut sent, now);
         if sent.len() as u32 + n + keep_free > self.rpm {
             return false;
@@ -116,7 +116,7 @@ impl JupiterApi {
         loop {
             let wait = {
                 let now = Instant::now();
-                let mut sent = self.sent.lock().expect("budget lock");
+                let mut sent = self.sent.lock().unwrap_or_else(PoisonError::into_inner);
                 prune(&mut sent, now);
                 if sent.len() as u32 + n <= self.rpm {
                     sent.extend(std::iter::repeat_n(now, n as usize));
@@ -131,7 +131,7 @@ impl JupiterApi {
 
     /// Requests counted in the last 60 s.
     pub fn used(&self) -> u32 {
-        let mut sent = self.sent.lock().expect("budget lock");
+        let mut sent = self.sent.lock().unwrap_or_else(PoisonError::into_inner);
         prune(&mut sent, Instant::now());
         sent.len() as u32
     }

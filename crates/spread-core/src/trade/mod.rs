@@ -194,7 +194,8 @@ impl Executor {
         let http = reqwest::Client::builder()
             .timeout(Duration::from_secs(10))
             .build()
-            .expect("http client");
+            // Settings the builder refuses still leave the plain client.
+            .unwrap_or_else(|_| reqwest::Client::new());
         let daily = DailyUsage::load();
         let state = TradeState {
             wallet: WalletStatus::Missing {
@@ -303,6 +304,8 @@ impl Executor {
         self.publish();
     }
 
+    // Called only while that record's swap runs, and records are never removed meanwhile.
+    #[allow(clippy::expect_used)]
     fn record_mut(&mut self, id: u64) -> &mut TradeRecord {
         self.state
             .records
@@ -407,7 +410,10 @@ impl Executor {
         )
         .await?;
         let tx: VersionedTransaction = wincode::deserialize(&unsigned.tx)?;
-        let keypair = self.keypair.as_ref().expect("checked above");
+        let keypair = self
+            .keypair
+            .as_ref()
+            .ok_or_else(|| anyhow!("no wallet key is loaded"))?;
         // Fails unless the wallet is the one and only required signer.
         let signed = VersionedTransaction::try_new(tx.message, &[keypair])
             .map_err(|e| anyhow!("signing: {e}"))?;
