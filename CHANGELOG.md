@@ -13,6 +13,19 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Each heading is dated on the day its tag was pushed.
 
+## [Unreleased]
+
+### Changed
+
+- The update banner and the occasional message from mayorana.ch now sit just
+  under the bar at the top of the window instead of covering it, and look the
+  same in every mayorana app. Download opens the new build in your browser and
+  shows its SHA-256 when one is published, to compare with the file you
+  downloaded.
+- The Pro window looks and reads the same in every mayorana app. Once you're Pro
+  it names your plan and email, and pressing Enter in the licence number field
+  activates it.
+
 ## [0.1.28] - 2026-10-28
 
 ### Changed
