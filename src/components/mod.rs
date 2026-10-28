@@ -10,7 +10,7 @@ mod watchlist;
 
 pub use event_log::EventLog;
 pub use lag::LagPanel;
-pub use mcp::{McpButton, McpOpen, McpWindow};
+pub use mcp::{McpOpen, McpWindow};
 pub use pro::{Pro, ProButton, ProWindow};
 pub use routes::RoutesPanel;
 pub use scanner::NewListingsPanel;
