@@ -1,6 +1,7 @@
 //! The SpreadRadar Pro window: what the free version does, the licence on this
 //! computer, and where to paste a key.
 
+use desktop_kit::ui::{ProBadge, ProLook};
 use dioxus::prelude::*;
 
 use crate::licence::{self, FreeError, Status, FREE_ASSETS};
@@ -25,30 +26,14 @@ const ESCAPE_JS: &str =
 pub fn ProButton() -> Element {
     let mut pro = use_context::<Pro>();
     let status = pro.status.read().clone();
-    let (label, class, title) = match &status {
-        Status::Pro(a) => (
-            "✦ PRO",
-            "pro-btn active",
-            format!("SpreadRadar Pro, {} plan for {}", a.plan.name, a.email),
-        ),
-        Status::NotPro(a) if a.is_free() => (
-            "Get Pro…",
-            "pro-btn",
-            format!("Free: {} AI credits left this month. The free version follows {FREE_ASSETS} assets; Pro follows any number", a.credits.left),
-        ),
-        Status::NotPro(_) | Status::Offline(_) | Status::Unknown(_) => (
-            "✦ RENEW PRO",
-            "pro-btn renew",
-            "Your licence doesn't make this SpreadRadar Pro right now".to_owned(),
-        ),
-        Status::Free => (
-            "Get Pro…",
-            "pro-btn",
-            format!("The free version follows {FREE_ASSETS} assets; Pro follows any number"),
-        ),
+    let title = match &status {
+        Status::Pro(a) => format!("SpreadRadar Pro, {} plan for {}", a.plan.name, a.email),
+        Status::NotPro(a) if a.is_free() => format!("Free: {} AI credits left this month. The free version follows {FREE_ASSETS} assets; Pro follows any number", a.credits.left),
+        Status::NotPro(_) | Status::Offline(_) | Status::Unknown(_) => "Your licence doesn't make this SpreadRadar Pro right now".to_owned(),
+        Status::Free => format!("The free version follows {FREE_ASSETS} assets; Pro follows any number"),
     };
     rsx! {
-        button { class, title, onclick: move |_| pro.open.set(true), "{label}" }
+        ProBadge { look: ProLook::of(&status), title, onclick: move |_| pro.open.set(true) }
     }
 }
 

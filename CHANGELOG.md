@@ -13,6 +13,16 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Each heading is dated on the day its tag was pushed.
 
+## [Unreleased]
+
+### Changed
+
+- The bar across the top of the window now looks and works the same in every
+  mayorana app: the name and version on the left, and on the right MCP,
+  Feedback, the light/dark switch and the Pro badge in the corner.
+- The market and New listings tabs are in the bar, and the bar and the watchlist
+  stay in place while the market view scrolls.
+
 ## [0.1.27] - 2026-10-28
 
 ### Changed

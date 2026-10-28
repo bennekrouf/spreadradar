@@ -1,15 +1,14 @@
 mod components;
-mod feedback;
 mod kit;
 mod licence;
 mod mcp;
 mod notice;
 mod telemetry;
-mod theme;
 mod update_check;
 
 use std::time::Duration;
 
+use desktop_kit::ui::{use_theme, Header};
 use dioxus::desktop::LogicalSize;
 use dioxus::prelude::*;
 use licence::StatusExt;
@@ -20,7 +19,7 @@ use spread_core::{EngineConfig, MarketCmd, MarketSnapshot};
 use tokio::sync::{mpsc, watch};
 
 use components::{
-    EventLog, LagPanel, McpButton, McpOpen, McpWindow, NewListingsPanel, Pro, ProButton, ProWindow,
+    EventLog, LagPanel, McpOpen, McpWindow, NewListingsPanel, Pro, ProButton, ProWindow,
     RoutesPanel, Tab, TradePanel, VenueCard, Watchlist,
 };
 
@@ -158,7 +157,7 @@ fn App() -> Element {
         open: Signal::new(false),
         status: Signal::new(licence::current()),
     });
-    use_context_provider(|| McpOpen(Signal::new(false)));
+    let mut mcp_open = use_context_provider(|| McpOpen(Signal::new(false))).0;
     // The title bar follows the licence, however it changes.
     use_effect(move || {
         dioxus::desktop::window().set_title(&window_title(&pro.status.read()));
@@ -259,8 +258,28 @@ fn App() -> Element {
         });
     let fresh = scan.read().rows.iter().filter(|r| r.fresh).count();
     let current = tab();
+    let theme = use_theme();
     rsx! {
-        theme::ThemeToggle {}
+        Header {
+            theme,
+            on_mcp: move |_| mcp_open.set(true),
+            pro: rsx! { ProButton {} },
+            div { class: "kit-tabs",
+                button {
+                    class: if current == Tab::Market { "kit-tab kit-on" } else { "kit-tab" },
+                    onclick: move |_| tab.set(Tab::Market),
+                    {selected.clone().unwrap_or_else(|| "Market".into())}
+                }
+                button {
+                    class: if current == Tab::NewListings { "kit-tab kit-on" } else { "kit-tab" },
+                    onclick: move |_| tab.set(Tab::NewListings),
+                    "New listings"
+                    if fresh > 0 {
+                        span { class: "tab-count", title: "Tokens that appeared since the app started", "{fresh}" }
+                    }
+                }
+            }
+        }
         div { class: "layout",
             Watchlist {
                 assets: m.assets.clone(),
@@ -342,33 +361,6 @@ fn App() -> Element {
                             "Turn off"
                         }
                     }
-                }
-                nav { class: "tabs",
-                    button {
-                        class: if current == Tab::Market { "tab active" } else { "tab" },
-                        onclick: move |_| tab.set(Tab::Market),
-                        {selected.clone().unwrap_or_else(|| "Market".into())}
-                    }
-                    button {
-                        class: if current == Tab::NewListings { "tab active" } else { "tab" },
-                        onclick: move |_| tab.set(Tab::NewListings),
-                        "New listings"
-                        if fresh > 0 {
-                            span { class: "tab-count", title: "Tokens that appeared since the app started", "{fresh}" }
-                        }
-                    }
-                    // Which build is running, for bug reports and support.
-                    span { class: "app-version", { concat!("v", env!("CARGO_PKG_VERSION")) } }
-                    McpButton {}
-                    // A link, not a button: the webview hands it to the browser.
-                    a {
-                        class: "btn ghost",
-                        href: "{feedback::contact_url()}",
-                        target: "_blank",
-                        title: "Ideas, bugs, questions: send them to the person who makes SpreadRadar",
-                        "Feedback"
-                    }
-                    ProButton {}
                 }
                 if current == Tab::NewListings {
                     NewListingsPanel {

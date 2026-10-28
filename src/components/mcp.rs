@@ -49,19 +49,6 @@ fn desktop_config_path() -> &'static str {
 }
 
 #[component]
-pub fn McpButton() -> Element {
-    let mut open = use_context::<McpOpen>().0;
-    rsx! {
-        button {
-            class: "btn ghost mcp-btn",
-            title: "Use SpreadRadar from Claude Desktop, Claude Code or Codex",
-            onclick: move |_| open.set(true),
-            "MCP"
-        }
-    }
-}
-
-#[component]
 pub fn McpWindow() -> Element {
     let mut open = use_context::<McpOpen>().0;
     if !open() {
