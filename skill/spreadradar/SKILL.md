@@ -1,6 +1,6 @@
 ---
 name: spreadradar
-description: Read crypto market data from SpreadRadar, the desktop app that follows the same asset on Binance, Bybit, OKX, MEXC, Gate and Jupiter (Solana) at once, through its MCP tools. Use this whenever the user mentions SpreadRadar, or asks how a token's price differs between exchanges, which venue quotes it best or moves first, what a cross-exchange spread looks like before and after fees, which tokens Gate or MEXC listed recently that Binance doesn't have, or wants to add or remove an asset from their watchlist. Also use it when SpreadRadar's tools are missing and the user wants to connect the app. Read-only market data; it does not trade and is not financial advice.
+description: How to read crypto market data from SpreadRadar, the desktop app that follows the same asset on Binance, Bybit, OKX, MEXC, Gate and Jupiter (Solana) at once. Read this skill before calling any spreadradar tool (watchlist, asset, add_asset, remove_asset, new_listings), because it has the rules for describing spreads and edges honestly, after fees and without financial advice, and how to lay out a market read. Use it whenever the user mentions SpreadRadar or their watchlist, or asks about a token's price gap between exchanges, the best bid or ask across venues, a cross-exchange spread before or after fees, which venue leads or lags, tokens Gate or MEXC listed that Binance doesn't have, or adding or removing an asset. Read-only market data; it does not trade.
 ---
 
 # SpreadRadar
@@ -67,3 +67,18 @@ reports it.
 Trading is not exposed through these tools. SpreadRadar's on-chain swaps stay
 in the app, behind its own dry run and limits. If the user wants to trade,
 tell them it is done in the SpreadRadar window, by them.
+
+## How to report back
+
+For the watchlist, use a table, biggest edge after fees first:
+
+| Asset | Price (USDT) | Venues | Best route | Edge before fees (bp) | After fees (bp) |
+|---|---|---|---|---|---|
+
+For one asset, a table of each venue's bid and ask, then the best two or three
+routes as *buy on X, sell on Y: before / after fees in bp*, then which venue
+leads or lags and how long it was watched.
+
+End every market read with one line on what eats an edge in practice
+(transfer time, withdrawal fees, slippage) and that this is market data, not
+advice.
