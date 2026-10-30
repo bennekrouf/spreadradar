@@ -1,0 +1,171 @@
+{
+  "skill_name": "spreadradar",
+  "description": "How to read crypto market data from SpreadRadar, the desktop app that follows the same asset on Binance, Bybit, OKX, MEXC, Gate and Jupiter (Solana) at once. Read this skill before calling any spreadradar tool (watchlist, asset, add_asset, remove_asset, new_listings), because it has the rules for describing spreads and edges honestly, after fees and without financial advice, and how to lay out a market read. Use it whenever the user mentions SpreadRadar or their watchlist, or asks about a token's price gap between exchanges, the best bid or ask across venues, a cross-exchange spread before or after fees, which venue leads or lags, tokens Gate or MEXC listed that Binance doesn't have, or adding or removing an asset. Read-only market data; it does not trade.",
+  "results": [
+    {
+      "query": "what's the spread on SOL between binance and okx right now after fees",
+      "should_trigger": true,
+      "trigger_rate": 0.3333333333333333,
+      "triggers": 1,
+      "runs": 3,
+      "pass": false
+    },
+    {
+      "query": "which exchange leads on JUP price moves, watch it for a minute and tell me",
+      "should_trigger": true,
+      "trigger_rate": 0.6666666666666666,
+      "triggers": 2,
+      "runs": 3,
+      "pass": true
+    },
+    {
+      "query": "add PEPE and WIF to my watchlist",
+      "should_trigger": true,
+      "trigger_rate": 0.6666666666666666,
+      "triggers": 2,
+      "runs": 3,
+      "pass": true
+    },
+    {
+      "query": "any tokens mexc or gate just listed that binance doesn't have yet? show me the top scored",
+      "should_trigger": true,
+      "trigger_rate": 0.3333333333333333,
+      "triggers": 1,
+      "runs": 3,
+      "pass": false
+    },
+    {
+      "query": "give me a rundown of my watchlist, which asset has the biggest cross-venue edge today",
+      "should_trigger": true,
+      "trigger_rate": 0.3333333333333333,
+      "triggers": 1,
+      "runs": 3,
+      "pass": false
+    },
+    {
+      "query": "why does bybit show BONK 3% below everyone else, is that a real arb",
+      "should_trigger": true,
+      "trigger_rate": 0.6666666666666666,
+      "triggers": 2,
+      "runs": 3,
+      "pass": true
+    },
+    {
+      "query": "remove ETH from spreadradar, I'm not following it anymore",
+      "should_trigger": true,
+      "trigger_rate": 0.6666666666666666,
+      "triggers": 2,
+      "runs": 3,
+      "pass": true
+    },
+    {
+      "query": "compare bid/ask for TIA on all five exchanges and jupiter",
+      "should_trigger": true,
+      "trigger_rate": 0.6666666666666666,
+      "triggers": 2,
+      "runs": 3,
+      "pass": true
+    },
+    {
+      "query": "is the kaspa gap between gate and mexc still there after taker fees",
+      "should_trigger": true,
+      "trigger_rate": 0.3333333333333333,
+      "triggers": 1,
+      "runs": 3,
+      "pass": false
+    },
+    {
+      "query": "watch AVAX for 2 minutes and tell me which venue lags",
+      "should_trigger": true,
+      "trigger_rate": 0.3333333333333333,
+      "triggers": 1,
+      "runs": 3,
+      "pass": false
+    },
+    {
+      "query": "should I buy bitcoin now or wait for the halving effect",
+      "should_trigger": false,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 3,
+      "pass": true
+    },
+    {
+      "query": "write a python bot that does cross-exchange arbitrage between binance and kraken using ccxt",
+      "should_trigger": false,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 3,
+      "pass": true
+    },
+    {
+      "query": "explain how funding rates work on perpetual futures",
+      "should_trigger": false,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 3,
+      "pass": true
+    },
+    {
+      "query": "what's the current price of ETH",
+      "should_trigger": false,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 3,
+      "pass": true
+    },
+    {
+      "query": "how do I withdraw USDT from binance to my phantom wallet on solana",
+      "should_trigger": false,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 3,
+      "pass": true
+    },
+    {
+      "query": "swap 50 USDT to SOL on jupiter for me",
+      "should_trigger": false,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 3,
+      "pass": true
+    },
+    {
+      "query": "calculate my capital gains tax on crypto in switzerland for 2025",
+      "should_trigger": false,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 3,
+      "pass": true
+    },
+    {
+      "query": "what's the difference between maker and taker fees",
+      "should_trigger": false,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 3,
+      "pass": true
+    },
+    {
+      "query": "is this token a rug pull? contract 0xabc...",
+      "should_trigger": false,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 3,
+      "pass": true
+    },
+    {
+      "query": "build me a dashboard in react that shows live crypto prices from coingecko",
+      "should_trigger": false,
+      "trigger_rate": 0.0,
+      "triggers": 0,
+      "runs": 3,
+      "pass": true
+    }
+  ],
+  "summary": {
+    "total": 20,
+    "passed": 15,
+    "failed": 5
+  }
+}
