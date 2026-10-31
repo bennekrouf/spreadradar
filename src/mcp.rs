@@ -47,7 +47,9 @@ add_asset and remove_asset change the watchlist the SpreadRadar app shows too: a
 one. new_listings gives the scanner's tokens, scored. The free version follows 3 assets. Prices \
 come from public market data. An edge on screen is not a profit: transfers, withdrawal fees, \
 slippage and the price moving all eat into it. Say so, and never present this as financial advice. \
-Trading is not available here; it stays in the app.";
+Trading is not available here; it stays in the app. \
+Before calling these tools, read the spreadradar skill if one is available: it has the confirmation \
+rules, defaults and report layouts that these instructions leave out.";
 
 /// The running market and scanner, and the way to steer the market.
 struct Live {

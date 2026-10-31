@@ -13,6 +13,15 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Each heading is dated on the day its tag was pushed.
 
+## [Unreleased]
+
+### Changed
+
+- When you use SpreadRadar from Claude, Codex or another agent, the agent now
+  reads the SpreadRadar skill first if you have it installed, so it follows the
+  skill's rules on what needs your yes and lays out its answers the way the
+  skill describes.
+
 ## [0.1.33] - 2026-10-31
 
 ### Changed
