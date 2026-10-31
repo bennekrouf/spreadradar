@@ -165,8 +165,24 @@ fn error(id: Value, code: i64, message: &str) -> Value {
     json!({ "jsonrpc": "2.0", "id": id, "error": { "code": code, "message": message } })
 }
 
+/// A tool result as the client reads it: compact, with no null fields. It
+/// stays in the client's context for the rest of the conversation, so every
+/// byte here is paid for again on each later turn.
 fn pretty(value: &Value) -> String {
-    serde_json::to_string_pretty(value).unwrap_or_default()
+    serde_json::to_string(&without_nulls(value.clone())).unwrap_or_default()
+}
+
+fn without_nulls(value: Value) -> Value {
+    match value {
+        Value::Object(map) => Value::Object(
+            map.into_iter()
+                .filter(|(_, v)| !v.is_null())
+                .map(|(k, v)| (k, without_nulls(v)))
+                .collect(),
+        ),
+        Value::Array(items) => Value::Array(items.into_iter().map(without_nulls).collect()),
+        other => other,
+    }
 }
 
 fn tools() -> Value {
@@ -215,7 +231,7 @@ fn tools() -> Value {
                 "Tokens Gate or MEXC listed against USDT in the last {NEW_WITHIN_DAYS} days, or have \
                  scheduled, that Binance spot doesn't list: where each trades, its volume, spread and \
                  24 h change, the best edge between exchanges, market cap and holders, whether Binance \
-                 already follows it through futures or Alpha, and the signals behind its score. Best \
+                 already follows it through futures or Alpha, and the signals behind its score (+ raised it, - lowered it). Best \
                  score first. The first scan after start takes up to a minute or two."
             ),
             "inputSchema": {
@@ -535,7 +551,8 @@ async fn new_listings(live: &Live, args: &Value) -> Result<Value, String> {
                 "holders": r.holders,
                 "binance_futures": r.binance_futures,
                 "binance_alpha": r.binance_alpha,
-                "signals": r.signals.iter().map(|g| json!({ "text": g.text, "good": g.good })).collect::<Vec<_>>(),
+                // "+" for a reason the score went up, "-" for one it went down.
+                "signals": r.signals.iter().map(|g| format!("{}{}", if g.good { '+' } else { '-' }, g.text)).collect::<Vec<_>>(),
                 "score": r.score,
                 "new_since_start": r.fresh,
             })

@@ -13,6 +13,16 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Each heading is dated on the day its tag was pushed.
 
+## [Unreleased]
+
+### Changed
+
+- SpreadRadar's answers to Claude and other agents are shorter, so a long
+  session spends fewer tokens: empty fields are left out and nothing is
+  padded with spacing.
+- The reasons behind a new listing's score are shorter: each one is a
+  single line marked + or -.
+
 ## [0.1.32] - 2026-10-31
 
 ### Changed
