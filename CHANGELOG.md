@@ -13,6 +13,17 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Each heading is dated on the day its tag was pushed.
 
+## [Unreleased]
+
+### Added
+
+- Install & restart, on the banner that says a new version is out: one click
+  downloads it, checks it, puts it in place of the version you have and opens it
+  again, on macOS, Windows and Linux. No disk image to open, drag and throw
+  away, no setup to click through. If an update can't finish, SpreadRadar says
+  why the next time it opens. Where it can't replace itself (an app in a folder
+  you can't change), the banner offers the download instead.
+
 ## [0.1.37] - 2026-11-01
 
 ### Changed
@@ -21,14 +32,9 @@ Each heading is dated on the day its tag was pushed.
 
 ## [0.1.36] - 2026-11-01
 
-### Added
+### Changed
 
-- Install & restart, on the banner that says a new version is out: one click
-  downloads it, checks it, puts it in place of the version you have and opens
-  it again, on macOS, Windows and Linux. No disk image to open, drag and throw
-  away, no setup to click through. If an update can't finish, SpreadRadar says why
-  the next time it opens. Where it can't replace itself (an app in a folder you
-  can't change), the banner offers the download instead.
+- Build and packaging only — no user-visible change.
 
 ## [0.1.35] - 2026-11-01
 
