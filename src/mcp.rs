@@ -13,6 +13,7 @@
 
 use std::time::{Duration, Instant};
 
+use desktop_kit::mcp::Server;
 use serde_json::{json, Value};
 use spread_core::jupiter::JupiterApi;
 use spread_core::market::normalize_symbol;
@@ -20,14 +21,9 @@ use spread_core::model::{ConnState, EventKind};
 use spread_core::scanner::{ScanSnapshot, NEW_WITHIN_DAYS};
 use spread_core::trade::TradeConfig;
 use spread_core::{EngineConfig, MarketCmd, MarketSnapshot};
-use tokio::io::{AsyncBufReadExt, AsyncWriteExt, BufReader};
 use tokio::sync::{mpsc, watch};
 
 use crate::licence::{self, StatusExt};
-
-/// The newest protocol revision this server speaks. A client asking for an
-/// older one gets its own back; everything used here exists in all of them.
-const PROTOCOL: &str = "2025-06-18";
 
 /// How long a call waits for quotes to arrive after the server starts, or
 /// after an asset is selected.
@@ -44,6 +40,15 @@ transfers, withdrawal fees, slippage and the price moving all eat into it. Say s
 this as financial advice. Trading is not available here; it stays in the app. \
 Before calling these tools, read the spreadradar skill if one is available: it has the confirmation \
 rules, defaults and report layouts that these instructions leave out.";
+
+/// What the client is told: the plumbing is desktop-kit's, the tools are below.
+const SERVER: Server = Server {
+    name: "spreadradar",
+    version: env!("CARGO_PKG_VERSION"),
+    instructions: INSTRUCTIONS,
+    tools,
+    library: false,
+};
 
 /// The running market and scanner, and the way to steer the market.
 struct Live {
@@ -88,97 +93,13 @@ pub fn serve() {
             .await;
         let live = Live { market, scan, cmds };
 
-        let mut lines = BufReader::new(tokio::io::stdin()).lines();
-        let mut stdout = tokio::io::stdout();
-        while let Ok(Some(line)) = lines.next_line().await {
-            if line.trim().is_empty() {
-                continue;
-            }
-            let Ok(message) = serde_json::from_str::<Value>(&line) else {
-                write(&mut stdout, &error(Value::Null, -32700, "not JSON")).await;
-                continue;
-            };
-            // A notification (no id) asks for nothing back.
-            let Some(id) = message.get("id").cloned() else {
-                continue;
-            };
-            let reply = handle(&live, id, &message).await;
-            write(&mut stdout, &reply).await;
-        }
+        let live = &live;
+        SERVER
+            .serve_async(|c| async move { call(live, &c.name, &c.args).await })
+            .await;
     });
     // The feeds' sockets don't need a graceful goodbye.
     runtime.shutdown_background();
-}
-
-async fn handle(live: &Live, id: Value, message: &Value) -> Value {
-    let method = message["method"].as_str().unwrap_or("");
-    let params = &message["params"];
-    match method {
-        "initialize" => {
-            let asked = params["protocolVersion"].as_str().unwrap_or(PROTOCOL);
-            let version = if asked <= PROTOCOL { asked } else { PROTOCOL };
-            result(
-                id,
-                json!({
-                    "protocolVersion": version,
-                    "capabilities": { "tools": {} },
-                    "serverInfo": { "name": "spreadradar", "version": env!("CARGO_PKG_VERSION") },
-                    "instructions": INSTRUCTIONS,
-                }),
-            )
-        }
-        "ping" => result(id, json!({})),
-        "tools/list" => result(id, json!({ "tools": tools() })),
-        "tools/call" => {
-            let name = params["name"].as_str().unwrap_or("");
-            let (text, is_error) = match call(live, name, &params["arguments"]).await {
-                Ok(value) => (pretty(&value), false),
-                Err(why) => (why, true),
-            };
-            result(
-                id,
-                json!({ "content": [{ "type": "text", "text": text }], "isError": is_error }),
-            )
-        }
-        _ => error(id, -32601, &format!("no method {method}")),
-    }
-}
-
-async fn write(stdout: &mut tokio::io::Stdout, reply: &Value) {
-    // One message per line, and nothing else ever on stdout: the client reads
-    // it as the protocol, so a stray print is a corrupt message.
-    let mut bytes = serde_json::to_vec(reply).unwrap_or_default();
-    bytes.push(b'\n');
-    let _ = stdout.write_all(&bytes).await;
-    let _ = stdout.flush().await;
-}
-
-fn result(id: Value, result: Value) -> Value {
-    json!({ "jsonrpc": "2.0", "id": id, "result": result })
-}
-
-fn error(id: Value, code: i64, message: &str) -> Value {
-    json!({ "jsonrpc": "2.0", "id": id, "error": { "code": code, "message": message } })
-}
-
-/// A tool result as the client reads it: compact, with no null fields. It
-/// stays in the client's context for the rest of the conversation, so every
-/// byte here is paid for again on each later turn.
-fn pretty(value: &Value) -> String {
-    serde_json::to_string(&without_nulls(value.clone())).unwrap_or_default()
-}
-
-fn without_nulls(value: Value) -> Value {
-    match value {
-        Value::Object(map) => Value::Object(
-            map.into_iter()
-                .filter(|(_, v)| !v.is_null())
-                .map(|(k, v)| (k, without_nulls(v)))
-                .collect(),
-        ),
-        Value::Array(items) => Value::Array(items.into_iter().map(without_nulls).collect()),
-        other => other,
-    }
 }
 
 fn tools() -> Value {
