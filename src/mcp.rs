@@ -39,15 +39,9 @@ const SCAN_WAIT: Duration = Duration::from_secs(90);
 
 const INSTRUCTIONS: &str = "SpreadRadar follows crypto assets on Binance, Bybit, OKX, MEXC, Gate and \
 Jupiter (Solana) at once, all quoted in USDT, and scans for tokens Gate or MEXC listed recently that \
-Binance spot doesn't list. watchlist gives every followed asset's price, best cross-venue edge and \
-how many venues quote it. asset gives one asset in detail: each venue's bid and ask, every buy-here \
-sell-there route in basis points before and after taker fees, and which venue's price lags the \
-others; pass watch_secs to observe for longer, since lead/lag needs price moves to measure. \
-add_asset and remove_asset change the watchlist the SpreadRadar app shows too: ask before removing \
-one. new_listings gives the scanner's tokens, scored. The free version follows 3 assets. Prices \
-come from public market data. An edge on screen is not a profit: transfers, withdrawal fees, \
-slippage and the price moving all eat into it. Say so, and never present this as financial advice. \
-Trading is not available here; it stays in the app. \
+Binance spot doesn't list. Prices come from public market data. An edge on screen is not a profit: \
+transfers, withdrawal fees, slippage and the price moving all eat into it. Say so, and never present \
+this as financial advice. Trading is not available here; it stays in the app. \
 Before calling these tools, read the spreadradar skill if one is available: it has the confirmation \
 rules, defaults and report layouts that these instructions leave out.";
 
@@ -210,7 +204,7 @@ fn tools() -> Value {
                     "symbol": symbol,
                     "watch_secs": {
                         "type": "integer", "minimum": 0, "maximum": 120,
-                        "description": "Watch this long before answering, to collect price moves for lead/lag and the best edges. Default 0.",
+                        "description": "Watch this long before answering, to collect price moves for lead/lag and the best edges: lead/lag needs prices to move. Default 0.",
                     },
                 },
                 "required": ["symbol"],

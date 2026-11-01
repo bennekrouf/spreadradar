@@ -13,6 +13,15 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Each heading is dated on the day its tag was pushed.
 
+## [Unreleased]
+
+### Changed
+
+- Using SpreadRadar from Claude, Codex or another agent takes less of the
+  agent's context on every message, including ones that have nothing to do with
+  SpreadRadar: its instructions are a few lines, with the details moved to the
+  tools that need them.
+
 ## [0.1.34] - 2026-10-31
 
 ### Changed
