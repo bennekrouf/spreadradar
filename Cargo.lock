@@ -4840,7 +4840,7 @@ dependencies = [
 
 [[package]]
 name = "spreadradar"
-version = "0.1.43"
+version = "0.1.44"
 dependencies = [
  "arboard",
  "base64 0.22.1",
