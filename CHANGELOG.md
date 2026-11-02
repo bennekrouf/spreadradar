@@ -13,6 +13,13 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Each heading is dated on the day its tag was pushed.
 
+## [Unreleased]
+
+### Added
+
+- Added a settings window and toolbar to the app, allowing users to customize
+  their experience and access additional features more easily.
+
 ## [0.1.42] - 2026-11-02
 
 ### Changed
