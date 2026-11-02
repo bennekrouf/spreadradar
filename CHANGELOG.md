@@ -13,6 +13,14 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Each heading is dated on the day its tag was pushed.
 
+## [Unreleased]
+
+### Changed
+
+- The "Use SpreadRadar from Claude or Codex" window now looks and reads the same
+  as in the other Mayorana apps, with a copy button on every step, and Escape
+  closes it.
+
 ## [0.1.40] - 2026-11-01
 
 ### Changed
