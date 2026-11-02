@@ -5,7 +5,9 @@ mod mcp;
 
 use std::time::Duration;
 
-use desktop_kit::ui::{use_pro, use_theme, Banners, Header, ProButton, ProWindow};
+use desktop_kit::ui::{
+    use_pro, use_theme, Banners, Header, ProButton, ProWindow, SettingsWindow, Toolbar,
+};
 use dioxus::desktop::LogicalSize;
 use dioxus::prelude::*;
 use licence::StatusExt;
@@ -205,12 +207,15 @@ fn App() -> Element {
     let fresh = scan.read().rows.iter().filter(|r| r.fresh).count();
     let current = tab();
     let theme = use_theme();
+    let mut settings_open = use_signal(|| false);
     rsx! {
         Banners { statistics: true }
         Header {
-            theme,
+            on_settings: move |_| settings_open.set(true),
             on_mcp: move |_| mcp_open.set(true),
             pro: rsx! { ProButton { pro, hint: components::pro::hint() } },
+        }
+        Toolbar {
             div { class: "kit-tabs",
                 button {
                     class: if current == Tab::Market { "kit-tab kit-on" } else { "kit-tab" },
@@ -226,6 +231,9 @@ fn App() -> Element {
                     }
                 }
             }
+        }
+        if settings_open() {
+            SettingsWindow { theme, on_close: move |_| settings_open.set(false) }
         }
         div { class: "layout",
             Watchlist {
