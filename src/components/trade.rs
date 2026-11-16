@@ -69,7 +69,7 @@ pub fn TradePanel(state: TradeState) -> Element {
             }
 
             p { class: "muted small",
-                "Max {state.max_trade_sol} SOL per trade · live today {state.used_today_sol:.3} / {state.max_daily_sol} SOL · slippage ≤ {state.max_slippage_bps} bps"
+                "Max {state.max_trade_sol} SOL per trade · live today {state.used_today_sol:.3} / {state.max_daily_sol} SOL · slippage ≤ {state.max_slippage_bps} bps · quote ≤ {state.max_quote_gap_bps} bps off the exchanges"
             }
             p { class: "muted small",
                 "Jupiter {state.jupiter} · RPC {rpc_host(&state.rpc_url)} · settings {state.settings_path}"

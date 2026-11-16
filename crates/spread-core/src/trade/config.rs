@@ -13,6 +13,7 @@ use serde::{Deserialize, Serialize};
 const HARD_MAX_TRADE_SOL: f64 = 10.0;
 const HARD_MAX_DAILY_SOL: f64 = 50.0;
 const HARD_MAX_SLIPPAGE_BPS: u16 = 300;
+const HARD_MAX_QUOTE_GAP_BPS: u16 = 500;
 /// 0.001 SOL.
 const HARD_MAX_PRIORITY_FEE_LAMPORTS: u64 = 1_000_000;
 
@@ -92,6 +93,9 @@ pub struct TradeConfig {
     /// Live volume per local calendar day, summed over both directions.
     pub max_daily_sol: f64,
     pub max_slippage_bps: u16,
+    /// How much worse than the exchanges' price for SOL Jupiter's quote may
+    /// be before a swap is refused.
+    pub max_quote_gap_bps: u16,
     /// Cap on the priority fee Jupiter may add to a swap.
     pub max_priority_fee_lamports: u64,
     /// From portal.jup.ag. Raises the limit from 30 to 60 requests a minute
@@ -111,6 +115,7 @@ impl Default for TradeConfig {
             max_trade_sol: 1.0,
             max_daily_sol: 5.0,
             max_slippage_bps: 50,
+            max_quote_gap_bps: 100,
             max_priority_fee_lamports: 100_000,
             jupiter_api_key: None,
             jupiter_rpm: None,
@@ -182,6 +187,12 @@ impl TradeConfig {
             "max_slippage_bps",
             &mut self.max_slippage_bps,
             HARD_MAX_SLIPPAGE_BPS,
+            notes,
+        );
+        cap(
+            "max_quote_gap_bps",
+            &mut self.max_quote_gap_bps,
+            HARD_MAX_QUOTE_GAP_BPS,
             notes,
         );
         cap(
@@ -267,13 +278,16 @@ mod tests {
 
     #[test]
     fn settings_are_clamped_to_hard_limits() {
-        let mut cfg: TradeConfig =
-            toml::from_str("max_trade_sol = 100.0\nmax_slippage_bps = 5000").unwrap();
+        let mut cfg: TradeConfig = toml::from_str(
+            "max_trade_sol = 100.0\nmax_slippage_bps = 5000\nmax_quote_gap_bps = 10000",
+        )
+        .unwrap();
         let mut notes = Vec::new();
         cfg.clamp(&mut notes);
         assert_eq!(cfg.max_trade_sol, HARD_MAX_TRADE_SOL);
         assert_eq!(cfg.max_slippage_bps, HARD_MAX_SLIPPAGE_BPS);
-        assert_eq!(notes.len(), 2);
+        assert_eq!(cfg.max_quote_gap_bps, HARD_MAX_QUOTE_GAP_BPS);
+        assert_eq!(notes.len(), 3);
     }
 
     #[test]

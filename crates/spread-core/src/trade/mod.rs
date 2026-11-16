@@ -7,6 +7,7 @@
 mod config;
 mod guard;
 mod jupiter;
+mod price_check;
 mod private;
 mod rpc;
 mod wallet;
@@ -28,6 +29,7 @@ use config::DailyUsage;
 use rpc::Rpc;
 
 use crate::jupiter::{JupiterApi, USDT_MINT};
+use crate::model::MarketSnapshot;
 
 const MAX_RECORDS: usize = 50;
 const BALANCE_REFRESH: Duration = Duration::from_secs(30);
@@ -138,6 +140,7 @@ pub struct TradeState {
     pub max_trade_sol: f64,
     pub max_daily_sol: f64,
     pub max_slippage_bps: u16,
+    pub max_quote_gap_bps: u16,
     pub rpc_url: String,
     /// Jupiter access, e.g. "API key · 60 req/min".
     pub jupiter: String,
@@ -149,14 +152,16 @@ pub struct TradeState {
 }
 
 /// `notices` are the settings problems from `TradeConfig::load`, shown in the panel.
+/// `market` gives the exchanges' SOL prices that every quote is checked against.
 pub async fn run(
     cfg: TradeConfig,
     notices: Vec<String>,
     jupiter: Arc<JupiterApi>,
+    market: watch::Receiver<MarketSnapshot>,
     mut cmds: mpsc::Receiver<TradeCmd>,
     out: watch::Sender<TradeState>,
 ) {
-    let mut ex = Executor::new(cfg, notices, jupiter, out);
+    let mut ex = Executor::new(cfg, notices, jupiter, market, out);
     ex.refresh_balances().await;
     let mut refresh = tokio::time::interval_at(
         tokio::time::Instant::now() + BALANCE_REFRESH,
@@ -176,6 +181,7 @@ pub async fn run(
 struct Executor {
     cfg: TradeConfig,
     jupiter: Arc<JupiterApi>,
+    market: watch::Receiver<MarketSnapshot>,
     http: reqwest::Client,
     rpc: Rpc,
     keypair: Option<Keypair>,
@@ -190,6 +196,7 @@ impl Executor {
         cfg: TradeConfig,
         notices: Vec<String>,
         jupiter: Arc<JupiterApi>,
+        market: watch::Receiver<MarketSnapshot>,
         out: watch::Sender<TradeState>,
     ) -> Self {
         let http = reqwest::Client::builder()
@@ -210,6 +217,7 @@ impl Executor {
             max_trade_sol: cfg.max_trade_sol,
             max_daily_sol: cfg.max_daily_sol,
             max_slippage_bps: cfg.max_slippage_bps,
+            max_quote_gap_bps: cfg.max_quote_gap_bps,
             rpc_url: cfg.rpc_url.clone(),
             jupiter: jupiter.describe(),
             settings_path: settings_path().display().to_string(),
@@ -220,6 +228,7 @@ impl Executor {
             rpc: Rpc::new(http.clone(), cfg.rpc_url.clone()),
             cfg,
             jupiter,
+            market,
             http,
             keypair: None,
             daily,
@@ -393,6 +402,16 @@ impl Executor {
         )
         .await?;
         self.record_mut(id).quoted_px = Some(quote.price);
+        // Every floor below is set from this quote: it has to be the market's price.
+        let exchanges = self.market.borrow().sol_exchanges.clone();
+        if let Err(why) = price_check::check_quote(
+            side,
+            quote.price,
+            exchanges.as_deref(),
+            self.cfg.max_quote_gap_bps,
+        ) {
+            return Ok(TradeStatus::Rejected(format!("not built: {why}")));
+        }
         if side == Side::BuySol {
             let worst = quote.usdt * (1.0 + f64::from(self.cfg.max_slippage_bps) / 1e4);
             if let Some(usdt) = self.state.usdt.filter(|&usdt| usdt < worst) {

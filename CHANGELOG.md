@@ -26,6 +26,14 @@ Each heading is dated on the day its tag was pushed.
   wallet than the size, the quote, your slippage limit and your fee cap allow,
   or give another account a right over the wallet. Dry runs make the same
   checks. A refused swap says why in the trade list, and nothing is sent.
+- Jupiter's price is now checked against the exchanges before a swap is
+  built. Every limit above is measured from Jupiter's quote, so a bad quote
+  used to pass them all. A sale quoted more than 1% under the exchanges'
+  middle bid for SOL, or a purchase more than 1% over their middle ask, is
+  refused. Set `max_quote_gap_bps` in `trade.toml` to change the 1% (at most
+  5%). The check needs SOL in the watchlist and at least two exchanges
+  quoting it; without them, swaps are refused and the trade list says why.
+  The trade panel shows the limit next to the others.
 
 ## [0.1.48] - 2026-11-06
 

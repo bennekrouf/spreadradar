@@ -12,11 +12,15 @@
 # use a provider URL (Helius, Triton, QuickNode...) before trading live.
 # rpc_url = "https://api.mainnet-beta.solana.com"
 
-# Safety limits. The app caps them at 10 SOL, 50 SOL, 300 bps and
+# Safety limits. The app caps them at 10 SOL, 50 SOL, 300 bps, 500 bps and
 # 1_000_000 lamports whatever is written here.
 # max_trade_sol = 1.0
 # max_daily_sol = 5.0
 # max_slippage_bps = 50
+# How far Jupiter's price may be worse than the exchanges' (the median bid
+# when selling, ask when buying) before a swap is refused. Needs SOL in the
+# watchlist and at least two exchanges quoting it.
+# max_quote_gap_bps = 100
 # max_priority_fee_lamports = 100_000
 
 # Jupiter API key from https://portal.jup.ag (free plan: 60 requests/min

@@ -12,8 +12,8 @@
 //!   the wallet is no less than the size, the quote, the slippage limit and
 //!   the fee cap allow, and nothing else was given a hold on it.
 //!
-//! The quote's price is still Jupiter's: these bound what a swap can take to
-//! what that quote said, not the quote itself.
+//! These bound what a swap can take to what its quote said, not the quote
+//! itself: `price_check` holds the quote to the exchanges' price first.
 
 use std::str::FromStr;
 

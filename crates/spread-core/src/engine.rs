@@ -5,7 +5,8 @@ use std::collections::VecDeque;
 use std::time::{Duration, Instant};
 
 use crate::model::{
-    ConnState, Event, EventKind, FeedEvent, PairLag, Quote, Route, Snapshot, Venue, VenueView,
+    ConnState, Event, EventKind, ExchangeQuote, FeedEvent, PairLag, Quote, Route, Snapshot, Venue,
+    VenueView,
 };
 
 const N: usize = Venue::COUNT;
@@ -366,6 +367,19 @@ impl Engine {
             .collect()
     }
 
+    /// Fresh quotes from the exchanges, leaving out polled venues (Jupiter).
+    pub fn exchange_quotes(&self, now: Instant) -> Vec<ExchangeQuote> {
+        self.fresh_quotes(now)
+            .into_iter()
+            .filter(|q| !q.venue.is_polled())
+            .map(|q| ExchangeQuote {
+                venue: q.venue,
+                bid: q.bid,
+                ask: q.ask,
+            })
+            .collect()
+    }
+
     /// Median mid across fresh venues: one venue off on its own can't drag it.
     fn consensus_mid(&self, now: Instant) -> Option<f64> {
         let mut mids: Vec<f64> = self.fresh_quotes(now).iter().map(Quote::mid).collect();
@@ -507,6 +521,18 @@ mod tests {
             .events
             .iter()
             .any(|ev| ev.kind == EventKind::Opportunity));
+    }
+
+    #[test]
+    fn exchange_quotes_leave_out_jupiter_and_stale_venues() {
+        let mut e = engine();
+        let t = Instant::now();
+        quote(&mut e, Venue::Binance, 100.0, t);
+        quote(&mut e, Venue::Okx, 100.2, t);
+        quote(&mut e, Venue::Jupiter, 90.0, t);
+        quote(&mut e, Venue::Gate, 95.0, t - Duration::from_secs(10));
+        let venues: Vec<Venue> = e.exchange_quotes(t).iter().map(|q| q.venue).collect();
+        assert_eq!(venues, [Venue::Binance, Venue::Okx]);
     }
 
     #[test]
