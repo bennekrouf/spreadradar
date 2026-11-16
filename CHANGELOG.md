@@ -13,6 +13,27 @@ Versioning: [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 Each heading is dated on the day its tag was pushed.
 
+## [Unreleased]
+
+### Added
+
+- SpreadRadar is now also published as an .msi for IT departments, to deploy
+  with Intune, Group Policy or SCCM: `msiexec /i spreadradar.msi ALLUSERS=1 /qn`
+  installs it for every user. Double-clicked, it installs for you alone with no
+  admin prompt, and it replaces an install made with the setup .exe.
+- IT departments can manage SpreadRadar on Windows with Group Policy or Intune:
+  turn off the update check, self-update or usage statistics, and set
+  the licence number for every user, under
+  `HKLM\SOFTWARE\Policies\Mayorana\SpreadRadar`.
+
+### Fixed
+
+- On Windows, SpreadRadar no longer opens a black command window next to its
+  own, and closing that window no longer quits the app.
+- Installing over an existing SpreadRadar on Windows no longer gets stuck on
+  "Setup was unable to automatically close all applications". Setup now
+  closes SpreadRadar and its helper processes itself before replacing it.
+
 ## [0.1.50] - 2026-11-16
 
 ### Changed
