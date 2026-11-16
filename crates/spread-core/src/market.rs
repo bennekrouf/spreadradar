@@ -576,6 +576,7 @@ impl Market {
 
     fn snapshot(&mut self, now: Instant) -> MarketSnapshot {
         let mut detail = None;
+        let mut sol_exchanges = None;
         let assets = self
             .tracked
             .iter_mut()
@@ -583,6 +584,9 @@ impl Market {
                 t.engine.tick(now);
                 if self.selected.as_ref() == Some(&t.symbol) {
                     detail = Some(t.engine.snapshot(now));
+                }
+                if &*t.symbol == "SOL" {
+                    sol_exchanges = Some(t.engine.exchange_quotes(now));
                 }
                 let (mid, best_gross_bps, fresh, listed) = t.engine.summary(now);
                 AssetSummary {
@@ -605,6 +609,7 @@ impl Market {
             locked: self.locked.iter().map(|a| a.symbol.clone()).collect(),
             limit: self.limit,
             at_limit: self.full(),
+            sol_exchanges,
         }
     }
 }

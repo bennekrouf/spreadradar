@@ -5,7 +5,9 @@
 //! Live mode is off at every start. Limits are checked here, not in the UI.
 
 mod config;
+mod guard;
 mod jupiter;
+mod price_check;
 mod private;
 mod rpc;
 mod wallet;
@@ -27,6 +29,7 @@ use config::DailyUsage;
 use rpc::Rpc;
 
 use crate::jupiter::{JupiterApi, USDT_MINT};
+use crate::model::MarketSnapshot;
 
 const MAX_RECORDS: usize = 50;
 const BALANCE_REFRESH: Duration = Duration::from_secs(30);
@@ -137,6 +140,7 @@ pub struct TradeState {
     pub max_trade_sol: f64,
     pub max_daily_sol: f64,
     pub max_slippage_bps: u16,
+    pub max_quote_gap_bps: u16,
     pub rpc_url: String,
     /// Jupiter access, e.g. "API key · 60 req/min".
     pub jupiter: String,
@@ -148,14 +152,16 @@ pub struct TradeState {
 }
 
 /// `notices` are the settings problems from `TradeConfig::load`, shown in the panel.
+/// `market` gives the exchanges' SOL prices that every quote is checked against.
 pub async fn run(
     cfg: TradeConfig,
     notices: Vec<String>,
     jupiter: Arc<JupiterApi>,
+    market: watch::Receiver<MarketSnapshot>,
     mut cmds: mpsc::Receiver<TradeCmd>,
     out: watch::Sender<TradeState>,
 ) {
-    let mut ex = Executor::new(cfg, notices, jupiter, out);
+    let mut ex = Executor::new(cfg, notices, jupiter, market, out);
     ex.refresh_balances().await;
     let mut refresh = tokio::time::interval_at(
         tokio::time::Instant::now() + BALANCE_REFRESH,
@@ -175,6 +181,7 @@ pub async fn run(
 struct Executor {
     cfg: TradeConfig,
     jupiter: Arc<JupiterApi>,
+    market: watch::Receiver<MarketSnapshot>,
     http: reqwest::Client,
     rpc: Rpc,
     keypair: Option<Keypair>,
@@ -189,6 +196,7 @@ impl Executor {
         cfg: TradeConfig,
         notices: Vec<String>,
         jupiter: Arc<JupiterApi>,
+        market: watch::Receiver<MarketSnapshot>,
         out: watch::Sender<TradeState>,
     ) -> Self {
         let http = reqwest::Client::builder()
@@ -209,6 +217,7 @@ impl Executor {
             max_trade_sol: cfg.max_trade_sol,
             max_daily_sol: cfg.max_daily_sol,
             max_slippage_bps: cfg.max_slippage_bps,
+            max_quote_gap_bps: cfg.max_quote_gap_bps,
             rpc_url: cfg.rpc_url.clone(),
             jupiter: jupiter.describe(),
             settings_path: settings_path().display().to_string(),
@@ -219,6 +228,7 @@ impl Executor {
             rpc: Rpc::new(http.clone(), cfg.rpc_url.clone()),
             cfg,
             jupiter,
+            market,
             http,
             keypair: None,
             daily,
@@ -392,6 +402,16 @@ impl Executor {
         )
         .await?;
         self.record_mut(id).quoted_px = Some(quote.price);
+        // Every floor below is set from this quote: it has to be the market's price.
+        let exchanges = self.market.borrow().sol_exchanges.clone();
+        if let Err(why) = price_check::check_quote(
+            side,
+            quote.price,
+            exchanges.as_deref(),
+            self.cfg.max_quote_gap_bps,
+        ) {
+            return Ok(TradeStatus::Rejected(format!("not built: {why}")));
+        }
         if side == Side::BuySol {
             let worst = quote.usdt * (1.0 + f64::from(self.cfg.max_slippage_bps) / 1e4);
             if let Some(usdt) = self.state.usdt.filter(|&usdt| usdt < worst) {
@@ -414,13 +434,41 @@ impl Executor {
             .keypair
             .as_ref()
             .ok_or_else(|| anyhow!("no wallet key is loaded"))?;
+        let wallet = keypair.pubkey();
+        // Jupiter wrote the transaction: nothing but a swap is signed.
+        if let Err(why) = guard::check_message(&tx.message, &wallet) {
+            return Ok(TradeStatus::Rejected(format!(
+                "not signed: Jupiter's transaction is not a plain swap: {why}"
+            )));
+        }
+        // What the wallet holds now, and the least this swap may leave in it.
+        let (lamports, usdt_accounts) = tokio::try_join!(
+            self.rpc.lamports(&owner),
+            self.rpc.token_accounts(&owner, USDT_MINT)
+        )?;
+        let before = guard::Before::new(lamports, &usdt_accounts);
+        let floor = match guard::floor(
+            &before,
+            side,
+            size_sol,
+            quote.usdt,
+            self.cfg.max_slippage_bps,
+            self.cfg.max_priority_fee_lamports,
+        ) {
+            Ok(floor) => floor,
+            Err(why) => return Ok(TradeStatus::Rejected(why)),
+        };
+        let watched = match guard::watched(&tx.message, &before) {
+            Ok(watched) => watched,
+            Err(why) => return Ok(TradeStatus::Rejected(format!("not signed: {why}"))),
+        };
         // Fails unless the wallet is the one and only required signer.
         let signed = VersionedTransaction::try_new(tx.message, &[keypair])
             .map_err(|e| anyhow!("signing: {e}"))?;
         let b64 = base64::engine::general_purpose::STANDARD.encode(wincode::serialize(&signed)?);
 
         self.set_status(id, TradeStatus::Simulating);
-        let sim = self.rpc.simulate(&b64).await?;
+        let sim = self.rpc.simulate(&b64, &watched).await?;
         if let Some(err) = sim.err {
             let tail = sim
                 .logs
@@ -432,6 +480,12 @@ impl Executor {
                 .collect::<Vec<_>>()
                 .join(" | ");
             return Ok(TradeStatus::Failed(format!("simulation: {err} {tail}")));
+        }
+        // The limits hold for what the transaction does, not only for what was asked.
+        if let Err(why) = guard::check_after(&wallet, &before, &floor, &watched, &sim.accounts) {
+            return Ok(TradeStatus::Rejected(format!(
+                "not sent: Jupiter's transaction goes past this swap's limits: {why}"
+            )));
         }
         if !live {
             return Ok(TradeStatus::Simulated);
@@ -529,9 +583,11 @@ mod tests {
         }
     }
 
-    /// Quote → build → sign → simulate against mainnet with a throwaway key.
-    /// The empty wallet makes the simulation fail, which is the point: it
-    /// proves the signed bytes are accepted and evaluated by a real node.
+    /// Quote → build → check → sign → simulate against mainnet with a throwaway
+    /// key. What Jupiter writes today has to pass for a plain swap, or no swap
+    /// would be signed at all. The empty wallet then makes the simulation
+    /// fail, which is the point: it proves the signed bytes, and the question
+    /// about the accounts, are accepted and evaluated by a real node.
     /// `cargo test -p spread-core -- --ignored dry_run`
     #[tokio::test]
     #[ignore = "network: Jupiter and Solana mainnet"]
@@ -549,16 +605,71 @@ mod tests {
                 .await
                 .unwrap();
             let tx: VersionedTransaction = wincode::deserialize(&unsigned.tx).unwrap();
+            guard::check_message(&tx.message, &kp.pubkey()).unwrap();
+            let watched = guard::watched(&tx.message, &guard::Before::new(0, &[])).unwrap();
             let signed = VersionedTransaction::try_new(tx.message, &[&kp]).unwrap();
             let bytes = wincode::serialize(&signed).unwrap();
             assert_eq!(bytes.len(), unsigned.tx.len());
 
             let sim = rpc
-                .simulate(&base64::engine::general_purpose::STANDARD.encode(&bytes))
+                .simulate(
+                    &base64::engine::general_purpose::STANDARD.encode(&bytes),
+                    &watched,
+                )
                 .await
                 .unwrap();
             let err = sim.err.expect("an empty wallet cannot swap");
             println!("{side:?}: quoted {:.4}, simulation: {err}", quote.price);
+        }
+    }
+
+    /// A real swap, for a wallet that holds SOL and USDT, seen through without
+    /// its key: the node runs it unsigned and says what it would leave, and
+    /// that has to be within the swap's limits. The same answer against a
+    /// quote ten times better for the wallet has to be refused.
+    /// `SPREADRADAR_TEST_WALLET=<address> cargo test -p spread-core -- --ignored funded`
+    #[tokio::test]
+    #[ignore = "network: Jupiter and Solana mainnet, and the address of a funded wallet"]
+    async fn a_real_swap_stays_within_its_limits_for_a_funded_wallet() {
+        let Ok(owner) = std::env::var("SPREADRADAR_TEST_WALLET") else {
+            println!("SPREADRADAR_TEST_WALLET is not set: nothing checked");
+            return;
+        };
+        let wallet: solana_keypair::Address = owner.parse().unwrap();
+        let http = reqwest::Client::new();
+        let rpc_url = std::env::var("SPREADRADAR_TEST_RPC")
+            .unwrap_or_else(|_| TradeConfig::default().rpc_url);
+        let rpc = Rpc::new(http.clone(), rpc_url);
+        let api = JupiterApi::new(std::env::var("JUPITER_API_KEY").ok(), None);
+
+        for side in [Side::SellSol, Side::BuySol] {
+            let quote = jupiter::quote(&api, &http, side, 0.1, 50).await.unwrap();
+            let unsigned = jupiter::build(&api, &http, &quote, &owner, 100_000)
+                .await
+                .unwrap();
+            let tx: VersionedTransaction = wincode::deserialize(&unsigned.tx).unwrap();
+            guard::check_message(&tx.message, &wallet).unwrap();
+
+            let lamports = rpc.lamports(&owner).await.unwrap();
+            let usdt_accounts = rpc.token_accounts(&owner, USDT_MINT).await.unwrap();
+            let before = guard::Before::new(lamports, &usdt_accounts);
+            let floor = guard::floor(&before, side, 0.1, quote.usdt, 50, 100_000).unwrap();
+            let watched = guard::watched(&tx.message, &before).unwrap();
+
+            let b64 = base64::engine::general_purpose::STANDARD.encode(&unsigned.tx);
+            let sim = rpc.simulate_unsigned(&b64, &watched).await.unwrap();
+            assert!(sim.err.is_none(), "{side:?}: {:?} {:?}", sim.err, sim.logs);
+            guard::check_after(&wallet, &before, &floor, &watched, &sim.accounts).unwrap();
+            // The same answer, held to a quote ten times better for the wallet.
+            let better = match side {
+                Side::SellSol => quote.usdt * 10.0,
+                Side::BuySol => quote.usdt / 10.0,
+            };
+            let refused = guard::floor(&before, side, 0.1, better, 50, 100_000).and_then(|floor| {
+                guard::check_after(&wallet, &before, &floor, &watched, &sim.accounts)
+            });
+            println!("{side:?}: within limits; against a quote ten times better: {refused:?}");
+            assert!(refused.is_err());
         }
     }
 

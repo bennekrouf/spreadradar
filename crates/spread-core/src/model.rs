@@ -348,4 +348,16 @@ pub struct MarketSnapshot {
     pub limit: Option<usize>,
     /// The limit is reached: adding another asset is refused.
     pub at_limit: bool,
+    /// Fresh top of book for SOL on the exchanges (not Jupiter), whichever
+    /// asset is selected. `None` while SOL is not followed. Swaps check
+    /// Jupiter's quote against it.
+    pub sol_exchanges: Option<Vec<ExchangeQuote>>,
+}
+
+/// One exchange's fresh top of book.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct ExchangeQuote {
+    pub venue: Venue,
+    pub bid: f64,
+    pub ask: f64,
 }

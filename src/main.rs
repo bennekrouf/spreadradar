@@ -69,6 +69,8 @@ fn main() {
     );
 
     let (tx, rx) = watch::channel(MarketSnapshot::default());
+    // The trade task checks every Jupiter quote against the exchanges' SOL price.
+    let market_rx = rx.clone();
     let (market_cmd_tx, market_cmd_rx) = mpsc::channel::<MarketCmd>(16);
     let (trade_tx, trade_rx) = watch::channel(TradeState::default());
     let (cmd_tx, cmd_rx) = mpsc::channel::<TradeCmd>(16);
@@ -89,6 +91,7 @@ fn main() {
                 trade_cfg,
                 notices,
                 jupiter.clone(),
+                market_rx,
                 cmd_rx,
                 trade_tx,
             ));
