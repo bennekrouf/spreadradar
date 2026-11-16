@@ -37,7 +37,11 @@ ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 MinVersion=10.0.17763
 UninstallDisplayName={#MyAppName} {#MyAppVersion}
-CloseApplications=yes
+; The running app is killed in [Code] before files are touched (see KillApp).
+; Restart Manager alone could leave "Setup was unable to automatically close
+; all applications" with Try again stuck. force: never offer to skip closing.
+CloseApplications=force
+RestartApplications=no
 SetupIconFile=..\assets\icon.ico
 UninstallDisplayIcon={app}\icon.ico
 LicenseFile=..\LICENSE
@@ -115,6 +119,25 @@ begin
     (RegQueryStringValue(HKCU, 'Software\' + WebView2Key, 'pv', Ver) and (Ver <> '') and (Ver <> '0.0.0.0'));
 end;
 
+// Force-close the app and anything it started so the uninstall and the file
+// copy never find the exe in use.
+procedure KillApp();
+var
+  ResultCode: Integer;
+begin
+  Exec(ExpandConstant('{sys}\taskkill.exe'), '/F /T /IM {#MyAppExeName}', '',
+       SW_HIDE, ewWaitUntilTerminated, ResultCode);
+  Sleep(800);
+end;
+
+// Runs on the Preparing page, before the in-use check: kill once more in case
+// the app was relaunched while the wizard was open.
+function PrepareToInstall(var NeedsRestart: Boolean): String;
+begin
+  KillApp();
+  Result := '';
+end;
+
 function InitializeSetup(): Boolean;
 var
   InstalledVer: String;
@@ -164,10 +187,15 @@ begin
       Exit;
     end;
 
+  KillApp();
+
+  // Silent uninstall of the previous version. If it fails, carry on: the new
+  // files overwrite the old ones in place.
   UninstStr := GetUninstallString();
   if UninstStr <> '' then
   begin
-    Exec('>', UninstStr, '', SW_HIDE, ewWaitUntilTerminated, ResultCode);
-    Sleep(500);
+    Exec('>', UninstStr + ' /SUPPRESSMSGBOXES /NORESTART', '', SW_HIDE,
+         ewWaitUntilTerminated, ResultCode);
+    Sleep(1000);
   end;
 end;
