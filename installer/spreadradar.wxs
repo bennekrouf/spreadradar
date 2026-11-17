@@ -37,7 +37,7 @@
     <Launch Condition="Installed OR WindowsBuild &gt;= 17763"
             Message="SpreadRadar needs Windows 10 version 1809 or later." />
 
-    <Icon Id="SpreadRadarIcon" SourceFile="..\assets\icon.ico" />
+    <Icon Id="SpreadRadarIcon" SourceFile="assets\icon.ico" />
     <Property Id="ARPPRODUCTICON" Value="SpreadRadarIcon" />
     <Property Id="ARPURLINFOABOUT" Value="https://mayorana.ch/en/apps/spreadradar" />
     <Property Id="ARPHELPLINK" Value="https://mayorana.ch/en/apps/spreadradar" />
@@ -89,16 +89,16 @@
     <StandardDirectory Id="ProgramFiles64Folder">
       <Directory Id="INSTALLFOLDER" Name="SpreadRadar">
         <Component Id="App">
-          <File Id="SpreadRadarExe" Source="..\target\release\spreadradar.exe" KeyPath="yes" />
+          <File Id="SpreadRadarExe" Source="target\release\spreadradar.exe" KeyPath="yes" />
         </Component>
         <Component Id="WebView2Loader">
-          <File Source="..\target\release\WebView2Loader.dll" KeyPath="yes" />
+          <File Source="target\release\WebView2Loader.dll" KeyPath="yes" />
         </Component>
         <Component Id="AppIcon">
-          <File Id="IconFile" Source="..\assets\icon.ico" KeyPath="yes" />
+          <File Id="IconFile" Source="assets\icon.ico" KeyPath="yes" />
         </Component>
         <Component Id="TradeExample">
-          <File Source="..\trade.example.toml" KeyPath="yes" />
+          <File Source="trade.example.toml" KeyPath="yes" />
         </Component>
       </Directory>
     </StandardDirectory>
